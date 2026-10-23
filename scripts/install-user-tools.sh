@@ -78,7 +78,10 @@ if [ -x "$lg_bin" ] && version_matches "$lg_current" "$LG_VERSION"; then
 else
     arch="$(ldc_arch)" || fail=$((fail + 1))
     if [ -n "${arch:-}" ]; then
-        url="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_linux_${arch}.tar.gz"
+        # lazygit 资产命名例外：x86_64 资产叫 linux_x86_64 而非 linux_amd64（arm64 同名无例外）
+        lg_arch=$arch
+        [ "$lg_arch" = amd64 ] && lg_arch=x86_64
+        url="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_linux_${lg_arch}.tar.gz"
         tmp=$(mktemp -d)
         if curl -fsSL "$url" | tar -xzf - -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/lazygit" "$lg_bin"; then
             if [ -n "$lg_current" ]; then step lazygit CHANGED "升级 → $LG_VERSION（$lg_bin）"

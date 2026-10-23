@@ -110,6 +110,22 @@ vp_bin_path() {
     return 1
 }
 
+node_available() {
+    # node 可用性（效果级，ADR-0003 nvm/vp 共存）：PATH 直见，或经任一 vp env 脚本激活后可见
+    # （安装器的 shim 布局随版本在 bin/ 与 fallback-bin/ 间变动，不写死），或 nvm 目录在位
+    command -v node >/dev/null 2>&1 && return 0
+    local e
+    for e in "$HOME/.config/vite-plus/env" "$HOME/.local/share/vite-plus/env.sh" \
+             "$HOME/.local/share/vite-plus/env" "$HOME/.vite-plus/env"; do
+        if [ -f "$e" ]; then
+            # shellcheck disable=SC1090
+            . "$e" >/dev/null 2>&1 || true
+            command -v node >/dev/null 2>&1 && return 0
+        fi
+    done
+    ls "$HOME"/.nvm/versions/node/*/bin/node >/dev/null 2>&1
+}
+
 version_matches() {
     # version_matches <命令输出> <期望版本> —— 语义化包含匹配，且避免 1.3.0 误配 11.3.0
     printf '%s' "$1" | grep -qE "(^|[^0-9.])$2([^0-9.]|$)"

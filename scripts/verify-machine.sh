@@ -78,8 +78,7 @@ else
     step "vp = 钉子（$VP_PIN）" FAIL '重跑 bootstrap（user 工具阶段）'
     FAILS=$((FAILS + 1))
 fi
-assert_that 'node 可用' 'node 由 vp 或机器自留地（如 nvm）提供——重跑 bootstrap' \
-    'command -v node || ls "$HOME"/.nvm/versions/node/*/bin/node >/dev/null 2>&1 || [ -x "$HOME/.local/share/vite-plus/fallback-bin/node" ]'
+assert_that 'node 可用' 'node 由 vp 或机器自留地（如 nvm）提供——重跑 bootstrap' 'node_available'
 
 phase '5/5 · 桌面域'
 if ! have gsettings; then
