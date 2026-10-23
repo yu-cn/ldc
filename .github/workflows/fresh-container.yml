@@ -1,0 +1,50 @@
+name: fresh-container
+# 新机冒烟（Linux 侧对 WDC fresh-machine VM 冒烟的廉价替代）：
+# ubuntu:24.04 裸容器内以 root 全量跑 bootstrap + verify，证明「clone 后一条命令开箱即用」。
+# 容器内 EUID=0 → root 阶段直接内联（ADR-0004 容器路径，无 sudo 交接）。
+# 双架构矩阵（ADR-0006）：amd64 腿在 x64 runner，arm64 腿在 GitHub 免费 arm64 runner
+# （ubuntu-24.04-arm 仅对公开仓库免费——本仓库 MIT 开源，与 WDC 同形态）。
+# LDC_SKIP_DOCKER=1：容器无 systemd，docker 装了也起不来；LDC_SMOKE=1：身份断言降为存在性检查。
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'   # 每周一 03:00 UTC
+
+jobs:
+  smoke:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false    # 一腿失败也跑完另一腿，判读以日志为准
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    name: smoke (${{ matrix.arch }})
+    timeout-minutes: 30
+    container: ubuntu:24.04
+    steps:
+      # 容器无 git/curl：先装前置（等价 README 的「前置：装好 git 与 curl」），再 fresh clone
+      - name: 前置 + fresh clone
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq git curl ca-certificates >/dev/null
+          git clone "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" /tmp/ldc
+      - name: bootstrap（root 全量）
+        env:
+          LDC_SKIP_DOCKER: '1'
+          LDC_SMOKE: '1'
+        run: bash /tmp/ldc/bootstrap.sh
+      - name: verify（--quick）
+        env:
+          LDC_SKIP_DOCKER: '1'
+          LDC_SMOKE: '1'
+        run: bash /tmp/ldc/scripts/verify-machine.sh --quick
+      # 成败都带日志回来，判读以日志为准
+      - name: 上传 bootstrap 日志（成败都传）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-logs-${{ matrix.arch }}
+          path: /tmp/ldc/logs/

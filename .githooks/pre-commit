@@ -1,0 +1,7 @@
+#!/bin/sh
+# pre-commit — 提交前跑仓库的无副作用校验（bash -n + shellcheck + 清单格式）
+# 接线方式：git config core.hooksPath .githooks（bootstrap 的 dotfiles 阶段自动接线）
+# 已装 shellcheck 则硬把关；未装则 validate.sh 内部警告放行（CI validate.yml 兜底）
+# （注意：注释不能以「# shellcheck」开头——那会被当作 shellcheck 指令解析）
+bash "$(git rev-parse --show-toplevel)/validate.sh"
+exit $?

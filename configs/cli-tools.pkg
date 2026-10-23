@@ -1,0 +1,14 @@
+# cli-tools.pkg — 现代 CLI 工具层（ADR-0003 通用核心；全部走 apt，版本随发行版）
+# 说明：fd-find/bat 在 Debian 系叫 fdfind/batcat，root 阶段统一补 /usr/local/bin/fd、bat 兼容链接
+#       starship/lazygit 不在 apt（或过旧），由 user 阶段二进制安装并钉版本（configs/*-version）
+fzf
+fd-find
+ripgrep
+bat
+zoxide
+eza
+git-delta
+tree
+htop
+fontconfig
+shellcheck

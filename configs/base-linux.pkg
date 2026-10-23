@@ -1,0 +1,12 @@
+# base-linux.pkg — 基础层包清单（每台 Ubuntu/Debian 开发机都需要；ADR-0003 通用核心）
+# 格式：一行一个 apt 包名，# 开头为注释。root 阶段逐包核销（dpkg -s 已装则跳过）
+build-essential
+git
+curl
+wget
+ca-certificates
+gnupg
+unzip
+zip
+jq
+bash-completion

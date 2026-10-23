@@ -1,0 +1,35 @@
+# AGENTS.md — 在本仓库干活的 agent 请先读
+
+LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可重放、可迁移），思路与结构对齐 [WDC](https://github.com/yu-cn/WDC)。
+
+## 语言与风格
+
+- 文档、脚本注释、脚本输出**全中文**（对齐 WDC 习惯）；bash 脚本 `#!/usr/bin/env bash` + `set -uo pipefail`
+- 例外：`.githooks/pre-commit` 为有意的 POSIX `sh`（钩子在最小环境也要能跑），不套用 bash 条款
+- 输出口径统一走 `scripts/lib/common.sh` 的 `phase` / `step`（与 bootstrap/verify 同一观感）
+- ADR 风格：短、含取舍与「拒绝的替代」；新决策先写 ADR 再动代码
+
+## 结构速览
+
+- `configs/` 声明式层（清单与版本钉子） · `scripts/` 编排层 · `dotfiles/` dotfiles 层（ADR-0002）
+- `bootstrap.sh` 唯一入口 · `validate.sh` 无副作用校验 · `ldc` CLI · `scripts/verify-machine.sh` 机器断言
+
+## 红线（改动前自查）
+
+1. **版本钉子单一来源**：vp/lazygit/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它
+2. **`.bashrc.local` / `.gitconfig.local` 是机器自留地**：永不入仓库、永不覆写（已存在只提示）；nvm 属自留地，不卸载、不进移除清单
+3. **git 身份不入仓库**：模板经 `[include] path = ~/.gitidentity` 引用；占位文件的 name/email 必须保持注释态（这是「未填则拒提交」护栏生效的前提）
+4. **dotfiles 落点是符号链接**：任何写穿（机器工具直改模板）都是漂移，verify 有断言、triage 负责分流
+5. **不替用户做首次 commit**：身份未填时提交会造出占位作者污染历史；交接命令见 README/AGENTS 惯例
+6. **install-packages.sh 必须可独立 `sudo bash` 运行**（ADR-0004 交接命令依赖此性质）
+7. **exit 码语义**：0 就绪 / 1 失败 / 2 有待办手工步骤——`ldc status` 与 CI 依赖此约定
+8. **架构适配单点**（ADR-0006）：新增二进制下载一律经 `ldc_arch()` 取资产段（amd64/arm64），勿散落 `uname -m` 判断；CI 双架构冒烟矩阵是承诺的验证面
+
+## 修改后的自查
+
+```bash
+bash validate.sh                      # bash -n + shellcheck（如在）+ 清单格式
+bash scripts/verify-machine.sh --quick # 本机断言（只读）
+```
+
+交付涉及提权/桌面/身份时，如实报告待办，不要把 SKIP/PENDING 说成 OK。

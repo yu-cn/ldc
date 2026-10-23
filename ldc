@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+# ldc — LDC 开发环境一键工具（bash 实现的单一入口；体验约定对齐 WDC wdc.ps1）
+# 裸命令不触发同步——长操作/改状态一律显式子命令；裸 ldc 给只读快照并提示下一步。
+# 用法：
+#   ldc | ldc status    只读快照（秒级）：与 origin/main 差距 / dotfiles 写穿漂移 / 身份状态
+#                         / root 阶段完成度 / 最近 bootstrap 判定行
+#   ldc sync            全量同步：fetch → 落后则 pull（--ff-only）→ bootstrap → verify 全量
+#   ldc verify [--full] 机器断言；默认 --quick 秒级，--full 含桌面域 gsettings 读值比对
+#   ldc triage          dotfiles 写穿漂移分流（交互式：逐文件 吸收/还原/跳过）
+#   ldc log [N]         最近一次 bootstrap 日志尾部（默认 40 行）
+#   ldc help [命令]     总览或单命令详解；-h/--help 同义
+#   ldc version         版本（git describe）；-v/--version 同义
+set -uo pipefail
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/common.sh
+. "$SELF/scripts/lib/common.sh"
+
+LDC_COMMANDS='status sync verify triage log help version'
+cmd="${1:-status}"
+[ $# -gt 0 ] && shift
+
+# --- 子命令校验在仓库定位之前：help/version 与友好报错不依赖 ~/.ldc 指针 ---
+case $cmd in
+    version|-v|--version)
+        v=$(git -C "$SELF" describe --tags --always --dirty 2>/dev/null) || v=''
+        printf 'ldc %s\n' "${v:-v0.0.0-unknown}"
+        exit 0
+        ;;
+    help|-h|--help)
+        topic="${1:-}"
+        case "$topic" in
+            status) echo 'ldc status — 只读快照（秒级，不改任何状态）
+  远端差距（fetch 后与 origin/main 的领先/落后）、dotfiles 写穿漂移（>0 提示 ldc triage）、
+  身份文件是否生效（占位未填则「拒提交」护栏仍在）、root 阶段完成度、最近一次 bootstrap 判定行。
+  裸 ldc 等价于 ldc status。' ;;
+            sync) echo 'ldc sync — 全量同步（日常一键收敛）
+  顺序：fetch → 落后则 pull --ff-only（本地领先/分叉一律中止交人工）→
+  bootstrap 全阶段（sudo 需密码时末尾出交接命令）→ verify 全量。
+  任一段 FAIL 即非零退出；bootstrap 有待办（exit 2）时跳过 verify 并列出待办。' ;;
+            verify) echo 'ldc verify [--full] — 机器断言
+  五组断言：dotfiles 符号链接与防写穿 / 身份 / 包清单核销（root 阶段完成度）/ 语言栈 / 桌面域。
+  默认 --quick（秒级）；--full 加桌面域 gsettings 读值比对。任一 FAIL 退出码 1。' ;;
+            triage) echo 'ldc triage — dotfiles 写穿漂移分流（交互式）
+  机器侧工具会把设置写穿符号链接进仓库文件；本命令逐文件给出「吸收进模板 / 还原为机器噪声」
+  的处置入口（ADR-0003 判据）。verify 的「dotfiles 与 HEAD 一致」断言 FAIL 时也会指向这里。' ;;
+            log) echo 'ldc log [N] — 最近一次 bootstrap 日志尾部（默认 40 行）' ;;
+            *) cat <<'EOF'
+ldc — LDC 开发环境一键工具（裸命令只读快照；仓库在 ~/.ldc 指向的路径）
+
+  ldc | ldc status     只读快照（秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap
+  ldc sync             全量同步：fetch → pull → bootstrap → verify 全量
+  ldc verify [--full]  机器断言（默认 --quick；--full 含桌面域读值比对）
+  ldc triage           dotfiles 写穿漂移分流（逐文件 吸收/还原，交互式）
+  ldc log [N]          最近一次 bootstrap 日志尾部（默认 40 行）
+  ldc help [命令]      本总览或单命令详解（-h/--help 同义）
+  ldc version          版本（-v/--version 同义）
+EOF
+            ;;
+        esac
+        exit 0
+        ;;
+esac
+
+suggest_cmd() {
+    # 打错子命令时的「你是不是想输…」：先看唯一前缀命中，再看编辑距离 ≤2
+    local input=$1 c hit=() bestd=99 d
+    for c in $LDC_COMMANDS; do
+        case $c in "$input"*) hit+=("$c") ;; esac
+    done
+    if [ "${#hit[@]}" -eq 1 ]; then printf '%s\n' "${hit[0]}"; return 0; fi
+    local best=''
+    for c in $LDC_COMMANDS; do
+        d=$(awk -v a="$input" -v b="$c" 'BEGIN {
+            m = length(a); n = length(b)
+            if (m > n) { t = a; a = b; b = t; k = m; m = n; n = k }
+            for (j = 0; j <= n; j++) prev[j] = j
+            for (i = 1; i <= m; i++) {
+                cur[0] = i
+                for (j = 1; j <= n; j++) {
+                    cost = (substr(a, i, 1) == substr(b, j, 1)) ? 0 : 1
+                    x = prev[j] + 1; y = cur[j-1] + 1; z = prev[j-1] + cost
+                    if (y < x) x = y; if (z < x) x = z
+                    cur[j] = x
+                }
+                for (j = 0; j <= n; j++) prev[j] = cur[j]
+            }
+            print prev[n]
+        }')
+        if [ "$d" -le 2 ] && [ "$d" -lt "$bestd" ]; then best=$c; bestd=$d; fi
+    done
+    [ -n "$best" ] && printf '%s\n' "$best"
+    return 1
+}
+
+if ! printf '%s\n' $LDC_COMMANDS | grep -qx "$cmd"; then
+    sug=$(suggest_cmd "$cmd" || true)
+    printf 'ldc: 未知子命令「%s」（可用：%s）\n' "$cmd" "$(printf '%s' "$LDC_COMMANDS" | sed 's/ / \/ /g')" >&2
+    [ -n "$sug" ] && printf 'ldc: 你是想输「%s」吗？\n' "$sug" >&2
+    exit 1
+fi
+
+repo_ahead_behind() {
+    # 输出 "ahead behind"（相对 origin/main）；无远端/无 HEAD 时 "0 0"
+    local counts
+    counts=$(git -C "$repo" rev-list --left-right --count 'HEAD...origin/main' 2>/dev/null || true)
+    printf '%s\n' "${counts:-0 0}"
+}
+
+# --- 仓库定位：~/.ldc 指针（bootstrap 的 dotfiles 阶段写入）---
+repo=$(head -n1 "$HOME/.ldc" 2>/dev/null || true)
+if [ -z "$repo" ] || [ ! -f "$repo/bootstrap.sh" ]; then
+    printf 'ldc: 未配置仓库路径——先在仓库跑一次 bootstrap.sh（会自动写 ~/.ldc 指针）\n' >&2
+    exit 1
+fi
+
+case $cmd in
+    status)
+        phase 'ldc status · 只读快照'
+        if ! git -C "$repo" remote get-url origin >/dev/null 2>&1; then
+            step '仓库' INFO '无 origin 远端（本地仓库形态）'
+        else
+            git -C "$repo" fetch --quiet 2>/dev/null
+            read -r ahead behind <<<"$(repo_ahead_behind)"
+            if [ "${ahead:-0}" -eq 0 ] && [ "${behind:-0}" -eq 0 ]; then
+                step '仓库' OK '与 origin/main 一致'
+            else
+                step '仓库' INFO "领先 ${ahead:-0} / 落后 ${behind:-0}——ldc sync 同步之"
+            fi
+        fi
+        if git -C "$repo" rev-parse --verify HEAD >/dev/null 2>&1; then
+            drift=$(git -C "$repo" status --porcelain -- dotfiles | wc -l)
+            if [ "$drift" -eq 0 ]; then
+                step 'dotfiles 漂移' OK '与 HEAD 一致'
+            else
+                step 'dotfiles 漂移' FAIL "$drift 项写穿——ldc triage 分流"
+            fi
+        else
+            step 'dotfiles 漂移' INFO '仓库尚无 commit——跳过比对'
+        fi
+        if git_identity_ok; then
+            step '身份文件' OK 'name/email 经 include 生效'
+        else
+            step '身份文件' FAIL '未填写——编辑 ~/.gitidentity（占位已生成）；不填则 git 拒绝提交'
+        fi
+        if root_stage_complete; then
+            step 'root 阶段' OK '包清单已核销'
+        else
+            step 'root 阶段' FAIL "未完成——交接命令：$(root_handoff_cmd "$repo")"
+        fi
+        if log_file=$(latest_bootstrap_log); then
+            verdict=$(grep -E '^\[(OK|FAIL|PENDING)\] ' "$log_file" | tail -n 1)
+            step '最近 bootstrap' INFO "$(basename "$log_file") → ${verdict:-（无判定行）}"
+        else
+            step '最近 bootstrap' INFO 'logs/ 尚无日志'
+        fi
+        ;;
+
+    sync)
+        phase 'ldc sync · 仓库'
+        if ! git -C "$repo" remote get-url origin >/dev/null 2>&1; then
+            step '仓库' INFO '无 origin 远端——跳过仓库同步'
+        else
+            git -C "$repo" fetch --quiet
+            read -r ahead behind <<<"$(repo_ahead_behind)"
+            if [ "${ahead:-0}" -gt 0 ] && [ "${behind:-0}" -gt 0 ]; then
+                step '仓库' FAIL "本地与远端分叉（领先 ${ahead} / 落后 ${behind}）——人工处理后再同步"; exit 1
+            fi
+            if [ "${ahead:-0}" -gt 0 ]; then
+                step '仓库' FAIL "本地领先 ${ahead} 个提交未推送——先 push 再 ldc"; exit 1
+            fi
+            if [ "${behind:-0}" -gt 0 ]; then
+                git -C "$repo" pull --ff-only || { step '仓库' FAIL 'pull --ff-only 失败，中止'; exit 1; }
+                step '仓库' CHANGED "已拉取 ${behind} 个提交"
+            else
+                step '仓库' OK '已与 origin/main 一致'
+            fi
+        fi
+        phase 'ldc sync · bootstrap'
+        rc=0
+        bash "$repo/bootstrap.sh" || rc=$?
+        if [ "$rc" -eq 1 ]; then
+            step 'bootstrap' FAIL '未全绿——最近日志尾部（完整见 logs/）'
+            log_file=$(latest_bootstrap_log) && tail -n 30 "$log_file"
+            exit 1
+        fi
+        if [ "$rc" -eq 2 ]; then
+            step 'bootstrap' PENDING '有待办手工步骤（上方已列出）——完成后 ldc sync 复查'
+            exit 2
+        fi
+        phase 'ldc sync · verify（全量）'
+        bash "$repo/scripts/verify-machine.sh"
+        exit $?
+        ;;
+
+    verify)
+        vargs=--quick
+        [ "${1:-}" = "--full" ] && vargs=
+        # shellcheck disable=SC2086
+        bash "$repo/scripts/verify-machine.sh" $vargs
+        exit $?
+        ;;
+
+    triage)
+        bash "$repo/scripts/triage-dotfiles-drift.sh"
+        exit $?
+        ;;
+
+    log)
+        lines=40
+        [ $# -gt 0 ] && lines="$1"
+        if ! log_file=$(latest_bootstrap_log); then
+            step '日志' INFO 'logs/ 尚无 bootstrap 日志'
+            exit 0
+        fi
+        step '日志' INFO "$log_file"
+        tail -n "$lines" "$log_file"
+        ;;
+esac
