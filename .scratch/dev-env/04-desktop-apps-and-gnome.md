@@ -20,6 +20,10 @@
 - [ ] verify：新增 FAIL 全在「待 root 交接」族；全量模式 12 条读值比对过
 - [ ] 推送后 CI validate + fresh-container 双架构绿（容器无 gsettings → 全域 SKIP 不受影响）
 
-## 实录
+## 实录（2026-10-24）
 
-（执行后回填）
+- [x] validate 全绿（含扩展格式与 vscode 模板在位两项新校验）
+- [x] 本机 bootstrap：root 回到交接态（desktop-apps 未装全）；GNOME 新 4 条真实应用（星期几、隐私×2、dock 最小化；字体渲染两条本已同值）；vscode 链接创建，**用户原 settings.json 已备份 .bak**
+- [x] 意外发现：本机 `code` 为用户此前自行 dpkg 安装（时间戳早于仓库存在）——desktop-apps 的 code 断言直接 OK，扩展 30/30 已装进现有 VSCode；唯一待交接项 = google-chrome-stable
+- [x] verify 全量：12/12 gsettings 读值比对通过（含 dash-to-dock）；提交前防写穿断言如实红（未提交的新模板），提交后 verify --quick 仅剩 Chrome 1 项 FAIL（待 root 交接）
+- [x] CI：validate（run 40014389588）与 fresh-container 双架构（run 40014416129）全绿——容器无 gsettings，桌面应用域整域 SKIP，验证了门禁设计
