@@ -64,6 +64,14 @@ for m in "$ROOT"/configs/*.gsettings; do
         fail=$((fail + 1))
     fi
 done
+ext_bad=$(grep -vE '^[[:space:]]*(#|$)' "$ROOT/configs/vscode-extensions.txt" \
+          | grep -vE '^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9._-]+$' || true)
+if [ -z "$ext_bad" ]; then
+    step 'configs/vscode-extensions.txt' OK
+else
+    step 'configs/vscode-extensions.txt' FAIL "应为 publisher.name 格式：$(printf '%s' "$ext_bad" | head -n 1)"
+    fail=$((fail + 1))
+fi
 for v in vp-version lazygit-version nerd-fonts-version; do
     val=$(head -n1 "$ROOT/configs/$v" | tr -d '[:space:]')
     if [[ $val =~ ^[A-Za-z0-9][A-Za-z0-9.]*$ ]]; then
@@ -73,7 +81,8 @@ for v in vp-version lazygit-version nerd-fonts-version; do
         fail=$((fail + 1))
     fi
 done
-for f in dotfiles/linux/bashrc dotfiles/linux/gitconfig dotfiles/shared/starship.toml; do
+for f in dotfiles/linux/bashrc dotfiles/linux/gitconfig dotfiles/shared/starship.toml \
+         dotfiles/linux/vscode-settings.json dotfiles/linux/vscode-keybindings.json; do
     if [ -f "$ROOT/$f" ]; then
         step "$f" OK
     else

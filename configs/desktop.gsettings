@@ -1,8 +1,28 @@
 # desktop.gsettings — GNOME 桌面域声明（ADR-0005：按需启用，无桌面会话自动 SKIP）
 # 格式：schema key value 一行一条；value 带引号原样传给 gsettings set
+# 去噪/隐私/信息密度/渲染质量 opinion 对齐 WDC base-windows 注册表域（ADR-0008 附表）
+# 某 schema 不存在的发行版（如 Debian 无 Ubuntu Dock）该行自动 SKIP
+
+# —— 主题与时钟 ——
 org.gnome.desktop.interface color-scheme 'prefer-dark'
 org.gnome.desktop.interface clock-format '24h'
 org.gnome.desktop.interface clock-show-date true
+org.gnome.desktop.interface clock-show-weekday true
 org.gnome.desktop.interface enable-hot-corners false
+
+# —— 字体渲染（配 JetBrainsMono NF，user 工具阶段安装）——
+org.gnome.desktop.interface font-antialiasing 'rgba'
+org.gnome.desktop.interface font-hinting 'slight'
+
+# —— 文件管理器 ——
 org.gnome.nautilus.preferences show-hidden-files true
+
+# —— 隐私去噪（对齐 WDC 关 Recall/遥测的取向）——
+org.gnome.desktop.privacy remember-recent-files false
+org.gnome.desktop.privacy remember-app-usage false
+
+# —— 输入 ——
 org.gnome.desktop.peripherals.touchpad tap-to-click true
+
+# —— Ubuntu Dock（Windows 任务栏习惯：点击图标最小化；schema 仅 Ubuntu 系存在）——
+org.gnome.shell.extensions.dash-to-dock click-action 'minimize'

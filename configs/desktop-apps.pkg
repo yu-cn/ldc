@@ -1,0 +1,5 @@
+# desktop-apps.pkg — 桌面应用域（ADR-0008：仅 gsettings 机器启用，headless/WSL/容器自动跳过）
+# VSCode/Chrome 经厂商 apt 源安装（install-packages.sh 配 keyring，与 gh 同款配方）；
+# 双架构对称：两家厂商源均发布 amd64 与 arm64（2026-10 实测）
+code
+google-chrome-stable

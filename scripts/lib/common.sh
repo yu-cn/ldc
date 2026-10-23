@@ -139,6 +139,7 @@ git_identity_ok() {
 
 root_stage_complete() {
     # root 阶段完成度（只读，供 ldc status / 汇总）：两清单全装 + gh 在位 + docker 在位
+    # + 桌面应用清单（仅 gsettings 机器——安装面与断言面同口径，ADR-0008）
     local pkg missing=0
     while read -r pkg; do
         dpkg -s "$pkg" >/dev/null 2>&1 || missing=$((missing + 1))
@@ -146,6 +147,11 @@ root_stage_complete() {
     have gh || missing=$((missing + 1))
     if [ "${LDC_SKIP_DOCKER:-0}" != "1" ]; then
         have docker || missing=$((missing + 1))
+    fi
+    if have gsettings; then
+        while read -r pkg; do
+            dpkg -s "$pkg" >/dev/null 2>&1 || missing=$((missing + 1))
+        done < <(pkg_list desktop-apps.pkg)
     fi
     [ "$missing" -eq 0 ]
 }

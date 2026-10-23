@@ -121,6 +121,32 @@ else
     fi
 fi
 
+phase 'user 工具 · VSCode 扩展（ADR-0008）'
+if ! have gsettings; then
+    step 'VSCode 扩展' SKIP '无桌面栈（headless/WSL/容器）'
+elif ! have code; then
+    step 'VSCode 扩展' INFO 'code 未装——root 阶段交接完成后重跑 bootstrap'
+else
+    # 幂等安装：--install-extension 对已装扩展快速通过；机器自装扩展不在清单不核销（ADR-0003）
+    ext_total=0
+    ext_ok=0
+    ext_missing=''
+    while read -r ext; do
+        ext_total=$((ext_total + 1))
+        if code --install-extension "$ext" >/dev/null 2>&1; then
+            ext_ok=$((ext_ok + 1))
+        else
+            ext_missing="$ext_missing $ext"
+        fi
+    done < <(pkg_list vscode-extensions.txt)
+    if [ -z "$ext_missing" ]; then
+        step 'VSCode 扩展' OK "$ext_ok/$ext_total 就位"
+    else
+        step 'VSCode 扩展' FAIL "失败：$ext_missing"
+        fail=$((fail + 1))
+    fi
+fi
+
 phase 'user 工具 · 汇总'
 if [ "$fail" -eq 0 ]; then
     step 'user 工具' OK '全部就位'

@@ -18,10 +18,13 @@ Node 归 **vp**（[版本钉 configs](configs/vp-version)，默认跟随 LTS）�
 starship 提示符 · lazygit · JetBrainsMono NF 字体（仅桌面栈机器）
 
 **GNOME 桌面域**（按需启用，[desktop.gsettings](configs/desktop.gsettings)，[ADR-0005](docs/adr/0005-desktop-domain-on-demand.md)）
-暗色主题 · 24h 时钟 · 显示日期 · 关热角 · Nautilus 显示隐藏文件 · 触摸板轻触点击——无桌面会话自动 SKIP，登录桌面后重跑 bootstrap 应用
+暗色主题 · 24h 时钟（含星期几）· 关热角 · 字体渲染 rgba/slight · Nautilus 显示隐藏文件 · 隐私去噪（关最近文件/应用使用记录）· 触摸板轻触 · Ubuntu Dock 点击最小化——无桌面会话自动 SKIP；发行版无对应组件的条目自动跳过
+
+**桌面应用域**（gsettings 机器启用，[ADR-0008](docs/adr/0008-desktop-apps-domain.md)）
+VSCode（packages.microsoft.com 源）+ [30 个扩展](configs/vscode-extensions.txt)（Python/Jupyter 全家、Remote-SSH/容器、中文语言包等）+ Chrome（dl.google.com 源）——双架构对称（两家厂商源均有 arm64/amd64）；扩展清单与 WDC 同名同格式，自装扩展不核销
 
 **dotfiles**（[dotfiles/](dotfiles/)，符号链接安装，旧文件备份 `*.bak`）
-bashrc（历史/别名/fzf/zoxide/starship + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml
+bashrc（历史/别名/fzf/zoxide/starship + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml · VSCode settings/keybindings（桌面应用域机器）
 
 ## 快速开始（新机器）
 
@@ -43,11 +46,12 @@ cd <repo> && sudo bash scripts/install-packages.sh
 退出码：`0` 全部就绪 · `1` 有失败 · `2` 有待办手工步骤（root 交接 / `~/.gitidentity` 未填 / 桌面待登录重跑）。
 
 <details>
-<summary><strong>首次运行你需要配合的三件事</strong></summary>
+<summary><strong>首次运行你需要配合的四件事</strong></summary>
 
 1. **root 阶段交接**——sudo 需密码时按末尾打印的命令手动执行（agent/CI 无法替你输密码）
 2. **填写身份**——bootstrap 生成 `~/.gitidentity` 占位后，填上**本机**的 git name/email（占位未填则 git 拒绝提交，这是防错护栏），然后做首次 commit：`git add -A && git commit -m "Initial LDC scaffold"`
 3. **桌面域**——有 GNOME 的机器在 SSH 上下文会 SKIP，登录桌面会话后重跑 `bash bootstrap.sh`（或 `ldc sync`）应用 gsettings 与字体
+4. **关闭 VSCode 设置同步**（桌面应用域机器）——首次启动 VSCode 若已登录账号，关闭「设置同步」：它是账号级开关、配置文件管不到；不关的话云端会与仓库 dotfiles 打架（仓库是唯一主人）
 
 </details>
 

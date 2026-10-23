@@ -14,6 +14,21 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 fail=0
 
+add_vendor_repo() {
+    # add_vendor_repo <keyring名> <密钥URL> <源文件名> <源行> [direct] —— 厂商 apt 源（keyring 方式，幂等）
+    # direct=密钥已是二进制 keyring 直接落盘；默认对 ASCII armored 密钥走 gpg --dearmor。
+    # 失败即清理半成品，防空 keyring 破坏下次幂等判断
+    local keyring="/etc/apt/keyrings/$1" keyurl=$2 list="/etc/apt/sources.list.d/$3" line=$4 mode=${5:-dearmor}
+    [ -f "$keyring" ] && [ -f "$list" ] && return 0
+    install -m 0755 -d /etc/apt/keyrings
+    if [ "$mode" = direct ]; then
+        curl -fsSL "$keyurl" -o "$keyring" || { rm -f "$keyring"; return 1; }
+    else
+        curl -fsSL "$keyurl" | gpg --dearmor > "$keyring" || { rm -f "$keyring"; return 1; }
+    fi
+    chmod go+r "$keyring" && printf '%s\n' "$line" > "$list"
+}
+
 phase 'root · apt 索引更新'
 if apt-get update -qq; then
     step 'apt-get update' OK
@@ -36,16 +51,42 @@ phase 'root · gh（apt 官方源）'
 if have gh; then
     step gh SKIP '已装'
 else
-    # keyring 方式加官方源（照抄 WDC setup-ubuntu.sh 实证配方）
-    if install -m 0755 -d /etc/apt/keyrings \
-       && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-       && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-       && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
+    if add_vendor_repo githubcli-archive-keyring.gpg \
+        https://cli.github.com/packages/githubcli-archive-keyring.gpg github-cli.list \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" direct \
        && apt-get update -qq && apt-get install -y -qq gh >/dev/null; then
         step gh OK '官方 apt 源安装'
     else
         step gh FAIL '官方源配置/安装失败'
         fail=$((fail + 1))
+    fi
+fi
+
+phase 'root · 桌面应用域（VSCode / Chrome；ADR-0008）'
+if ! have gsettings; then
+    step 'desktop-apps' SKIP '无桌面栈（headless/WSL/容器）'
+else
+    arch=$(dpkg --print-architecture)
+    ok_repo=1
+    if add_vendor_repo microsoft.gpg https://packages.microsoft.com/keys/microsoft.asc vscode.list \
+        "deb [arch=$arch signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main"; then
+        step 'vscode 源' OK 'packages.microsoft.com（keyring）'
+    else
+        step 'vscode 源' FAIL '密钥/源配置失败'
+        ok_repo=0; fail=$((fail + 1))
+    fi
+    if add_vendor_repo google.gpg https://dl.google.com/linux/linux_signing_key.pub google-chrome.list \
+        "deb [arch=$arch signed-by=/etc/apt/keyrings/google.gpg] https://dl.google.com/linux/chrome/deb/ stable main"; then
+        step 'chrome 源' OK 'dl.google.com（keyring）'
+    else
+        step 'chrome 源' FAIL '密钥/源配置失败'
+        ok_repo=0; fail=$((fail + 1))
+    fi
+    if [ "$ok_repo" -eq 1 ]; then
+        apt-get update -qq || true
+        while read -r pkg; do
+            pkg_install "$pkg" || fail=$((fail + 1))
+        done < <(pkg_list desktop-apps.pkg)
     fi
 fi
 

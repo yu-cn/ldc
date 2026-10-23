@@ -68,6 +68,13 @@ if [ "${LDC_SKIP_DOCKER:-0}" = "1" ]; then
 else
     assert_that 'docker 在位' 'root 阶段安装（get.docker.com）' 'command -v docker'
 fi
+if ! have gsettings; then
+    step '桌面应用域' SKIP '无桌面栈（headless/WSL/容器）——ADR-0008'
+else
+    while read -r pkg; do
+        assert_that "apt(桌面应用): $pkg" "root 阶段待交接：$(root_handoff_cmd)" "dpkg -s $pkg"
+    done < <(pkg_list desktop-apps.pkg)
+fi
 
 phase '4/5 · 语言栈与架构'
 assert_that '架构受支持（amd64/arm64）' 'LDC 仅支持 amd64/arm64（ADR-0006）' 'ldc_arch >/dev/null'
@@ -88,12 +95,30 @@ if ! have gsettings; then
 else
     assert_that 'JetBrainsMono NF 字体目录' '重跑 bootstrap（user 工具阶段）' \
         '[ -n "$(ls -A "$HOME/.local/share/fonts/JetBrainsMono-NF" 2>/dev/null)" ]'
+    # VSCode 配置链接与扩展（ADR-0008；自装扩展不在清单不核销——ADR-0003）
+    assert_that '~/.config/Code/User/settings.json → 模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
+        '[ "$(readlink "$HOME/.config/Code/User/settings.json")" = "$ROOT/dotfiles/linux/vscode-settings.json" ]'
+    assert_that '~/.config/Code/User/keybindings.json → 模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
+        '[ "$(readlink "$HOME/.config/Code/User/keybindings.json")" = "$ROOT/dotfiles/linux/vscode-keybindings.json" ]'
+    if have code; then
+        assert_that 'VSCode 扩展清单在位' '重跑 bootstrap（user 工具阶段）' \
+            '[ -z "$(comm -23 <(pkg_list vscode-extensions.txt | sort) <(code --list-extensions 2>/dev/null | sort))" ]'
+    else
+        step 'VSCode 扩展清单' FAIL 'code 未装（root 阶段待交接）'
+        FAILS=$((FAILS + 1))
+    fi
     if ! desktop_session_reachable; then
         step 'gsettings 读值比对' SKIP '无图形会话——登录 GNOME 桌面后重跑 bootstrap'
     elif [ "$QUICK" -eq 1 ]; then
         step 'gsettings 读值比对' SKIP '--quick 跳过（会话在位）'
     else
+        # schema 存在性降级与 apply-desktop 同口径：发行版无此组件（如 Debian 无 Ubuntu Dock）SKIP
+        verify_schemas=$({ gsettings list-schemas; gsettings list-relocatable-schemas; } | sort -u)
         while read -r schema key value; do
+            if ! grep -qx "$schema" <<<"$verify_schemas"; then
+                step "gsettings: $schema $key" SKIP '此发行版无此 schema（组件未装）'
+                continue
+            fi
             assert_that "gsettings: $schema $key = $value" '' \
                 "[ \"\$(gsettings get $schema $key)\" = \"$value\" ]"
         done < <(grep -vE '^[[:space:]]*(#|$)' "$ROOT/configs/desktop.gsettings")
