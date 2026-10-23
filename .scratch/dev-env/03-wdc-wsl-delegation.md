@@ -1,6 +1,6 @@
 # 工单 03 — WDC 侧 WSL 阶段委托 LDC（ADR-0007 落地）
 
-> 状态：规格已定稿，**待 WDC 仓库侧实施**（本工单在 LDC 仓库流转，实施于 WDC）。前置：LDC 发布到 github.com/yu-cn/LDC。
+> 状态：规格已定稿，**待 WDC 仓库侧实施**（本工单在 LDC 仓库流转，实施于 WDC）。前置：LDC 发布到 github.com/yu-cn/ldc。
 
 ## 目标形态
 

@@ -1,6 +1,6 @@
 # AGENTS.md — 在本仓库干活的 agent 请先读
 
-LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可重放、可迁移），思路与结构对齐 [WDC](https://github.com/yu-cn/WDC)。
+LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可重放、可迁移），思路与结构对齐 [WDC](https://github.com/yu-cn/wdc)。
 
 ## 语言与风格
 

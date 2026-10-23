@@ -2,7 +2,7 @@
 
 > clone 之后一条命令，任何一台 Ubuntu/Debian 机器收敛到声明状态：软件、语言运行时、CLI 工具、GNOME 桌面偏好、dotfiles——幂等、可重放、可迁移。
 
-基于 [WDC](https://github.com/yu-cn/WDC)（Windows + WSL 同思路仓库）的经验自建，独立仓库不 fork（[ADR-0001](docs/adr/0001-own-tree-not-fork-wdc.md)）；两仓库为**关联项目、统筹演进**（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md)）：WDC 管 Windows 侧与 WSL 生命周期，Linux 机器内部（含 WSL Ubuntu）的收敛归 LDC。仓库以 [MIT](LICENSE) 开源，欢迎直接使用或 fork 改造成你自己的环境。
+基于 [WDC](https://github.com/yu-cn/wdc)（Windows + WSL 同思路仓库）的经验自建，独立仓库不 fork（[ADR-0001](docs/adr/0001-own-tree-not-fork-wdc.md)）；两仓库为**关联项目、统筹演进**（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md)）：WDC 管 Windows 侧与 WSL 生命周期，Linux 机器内部（含 WSL Ubuntu）的收敛归 LDC。仓库以 [MIT](LICENSE) 开源，欢迎直接使用或 fork 改造成你自己的环境。
 
 **支持的机器形态**：Ubuntu/Debian · **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
 
