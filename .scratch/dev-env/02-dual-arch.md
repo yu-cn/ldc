@@ -24,6 +24,11 @@
 - [x] validate 全绿，含新增「架构映射自测（ldc_arch）」：x86_64→amd64 · aarch64/arm64→arm64 · riscv64 拒绝
 - [x] 本机（aarch64）bootstrap 预检出「[OK] 架构 - aarch64 → arm64 资产」，exit 2 两族待办不变（root 交接 + 身份）
 - [x] verify --quick：第 4 组更名「语言栈与架构」，架构断言 OK；FAIL 仍 11 项两族（身份 1 + root 待交接 10）
-- [ ] CI 双架构矩阵待推送后首跑判读（本机无法代跑；arm64 腿用 ubuntu-24.04-arm，公开仓库免费）
+- [x] CI 双架构矩阵首跑全绿（发布当日，run 40010811598：amd64 + arm64 双腿 success；validate 每次 push 亦全绿）
 
 盘点确认：架构敏感点仅 `ldc_arch()` 一处；uv/vp/starship 安装器、gh 源（dpkg --print-architecture）、get.docker.com 均自探测；字体 zip 与 apt 包名架构无关。
+
+**首航三修（发布后 40009722480 / 40010261787 两次红 → 40010811598 全绿）**：
+1. exit 2 语义 vs CI：容器冒烟（LDC_SMOKE=1）待办不适用（无桌面、身份占位）——bootstrap 记 INFO 不计待办退 0（ADR-0004 补记）
+2. lazygit 资产命名例外：x86_64 资产叫 `linux_x86_64` 而非 `linux_amd64`（arm64 同名无例外，本机首跑未暴露）——调用点翻译，ldc_arch 规范段不变
+3. vp shim 布局随版本在 bin/ 与 fallback-bin/ 间变动——node 断言改效果级探测 `node_available()`（source 各 vp env 后 command -v，nvm 目录兜底）
