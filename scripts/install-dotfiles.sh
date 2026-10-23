@@ -90,6 +90,10 @@ link "$ROOT/dotfiles/linux/bashrc"           "$HOME/.bashrc"
 link "$ROOT/dotfiles/linux/gitconfig"        "$HOME/.gitconfig"
 mkdir -p "$HOME/.config"
 link "$ROOT/dotfiles/shared/starship.toml"   "$HOME/.config/starship.toml"
+# ldc CLI 薄入口（对齐 wdc 的 profile 转发习惯；Linux 用符号链接更通用——非交互 shell 也可用，
+# 任意目录裸命令 `ldc sync`）。仓库迁移后重跑 bootstrap 会自动重指
+mkdir -p "$HOME/.local/bin"
+link "$ROOT/ldc"                             "$HOME/.local/bin/ldc"
 
 phase 'dotfiles · 机器数据文件（gitidentity 占位 / gitconfig.local）'
 if [ ! -e "$HOME/.gitidentity" ]; then

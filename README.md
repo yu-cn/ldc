@@ -53,6 +53,8 @@ cd <repo> && sudo bash scripts/install-packages.sh
 
 ## 常用命令
 
+`ldc` 由 bootstrap 链接到 `~/.local/bin/ldc`——任意目录可用，无需进仓库（对齐 wdc 的裸命令体验）。
+
 | 命令 | 用途 |
 |---|---|
 | `ldc` | 只读快照（裸命令默认，秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap |

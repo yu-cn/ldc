@@ -36,6 +36,8 @@ assert_that '~/.gitconfig → 仓库模板' '重跑 bash bootstrap.sh（dotfiles
     '[ "$(readlink "$HOME/.gitconfig")" = "$ROOT/dotfiles/linux/gitconfig" ]'
 assert_that '~/.config/starship.toml → 仓库模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
     '[ "$(readlink "$HOME/.config/starship.toml")" = "$ROOT/dotfiles/shared/starship.toml" ]'
+assert_that '~/.local/bin/ldc → 仓库 CLI（任意目录裸命令）' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
+    '[ "$(readlink "$HOME/.local/bin/ldc")" = "$ROOT/ldc" ]'
 # dotfiles 落点是符号链接，机器侧工具写穿会直接污染仓库——验收须与 HEAD 一致；无 commit 时降级 INFO
 if git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
     assert_that 'dotfiles 与 HEAD 一致（防写穿）' '写穿漂移——bash scripts/triage-dotfiles-drift.sh 逐文件分流' \

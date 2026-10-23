@@ -11,7 +11,9 @@
 #   ldc help [命令]     总览或单命令详解；-h/--help 同义
 #   ldc version         版本（git describe）；-v/--version 同义
 set -uo pipefail
-SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# readlink -f 解析真实路径：本命令会经 ~/.local/bin/ldc 符号链接调用（bootstrap 安装），
+# 不解析的话 BASH_SOURCE 是链接路径，定位不到 scripts/lib
+SELF="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 . "$SELF/scripts/lib/common.sh"
 
