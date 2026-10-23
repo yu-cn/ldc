@@ -4,7 +4,8 @@ name: fresh-container
 # 容器内 EUID=0 → root 阶段直接内联（ADR-0004 容器路径，无 sudo 交接）。
 # 双架构矩阵（ADR-0006）：amd64 腿在 x64 runner，arm64 腿在 GitHub 免费 arm64 runner
 # （ubuntu-24.04-arm 仅对公开仓库免费——本仓库 MIT 开源，与 WDC 同形态）。
-# LDC_SKIP_DOCKER=1：容器无 systemd，docker 装了也起不来；LDC_SMOKE=1：身份断言降为存在性检查。
+# LDC_SKIP_DOCKER=1：容器无 systemd，docker 装了也起不来；LDC_SMOKE=1：冒烟降级——bootstrap
+# 待办不计（容器无桌面、身份占位，可退 0），verify 身份断言降为存在性检查（ADR-0004）。
 on:
   workflow_dispatch:
   schedule:

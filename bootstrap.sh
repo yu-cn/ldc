@@ -11,6 +11,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 main() {
     local pending=0 fails=0 handoff="" desktop_pending=0
+    # LDC_SMOKE=1（容器冒烟，ADR-0004）：待办语义不适用——容器永无桌面会话、身份刻意占位，
+    # 故 SKIP/占位记 INFO 不计待办，bootstrap 可退 0 让 CI 继续跑 verify
+    local smoke=0
+    [ "${LDC_SMOKE:-0}" = "1" ] && smoke=1
 
     phase '1/7 · 预检'
     if [ ! -r /etc/os-release ]; then
@@ -82,7 +86,11 @@ main() {
     bash "$ROOT/scripts/apply-desktop.sh" || rc=$?
     case $rc in
         0) : ;;
-        2) desktop_pending=1; pending=$((pending + 1)) ;;   # 无会话 SKIP——待办：登录桌面后重跑
+        2) if [ "$smoke" -eq 1 ]; then
+                step '桌面域' SKIP '无会话（SMOKE 容器形态，不记待办）'
+            else
+                desktop_pending=1; pending=$((pending + 1))   # 无会话 SKIP——待办：登录桌面后重跑
+            fi ;;
         *) step '桌面域' FAIL "退出码 $rc"; fails=$((fails + 1)) ;;
     esac
 
@@ -93,6 +101,8 @@ main() {
     # 身份占位是待办（手工步骤）：不填 git 拒绝提交（护栏），不阻断 bootstrap
     if git_identity_ok; then
         step 'git 身份' OK '已生效'
+    elif [ "$smoke" -eq 1 ]; then
+        step 'git 身份' INFO '占位（SMOKE 降级——容器冒烟不填身份）'
     else
         step 'git 身份' PENDING '~/.gitidentity 未填（占位已生成）'
         pending=$((pending + 1))
