@@ -14,6 +14,14 @@ LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可�
 - `configs/` 声明式层（清单与版本钉子） · `scripts/` 编排层 · `dotfiles/` dotfiles 层（ADR-0002）
 - `bootstrap.sh` 唯一入口 · `validate.sh` 无副作用校验 · `ldc` CLI · `scripts/verify-machine.sh` 机器断言
 
+## 姊妹仓库 WDC 统筹（ADR-0007）
+
+LDC 与 WDC 同主人关联项目，改动需跨仓库统筹：
+
+- **Linux 侧模板主作者位在 LDC**：`dotfiles/linux/` 与 WDC 的 `dotfiles/wsl/` 是同源拷贝，WDC 侧已冻结待退役——改 Linux 侧 shell/git/提示符习惯只改 LDC，勿反向同步
+- **钉子同值**：`configs/vp-version` 与 WDC 的同名文件保持同值，升级同日双改、两仓库各自记账
+- **WSL 委托契约**：WDC 的 WSL 阶段最终形态是调用 LDC（clone/pull → root 委托 install-packages.sh → user 委托 bootstrap.sh → 验收委托 verify --quick）；改动 bootstrap 各阶段脚本的入口契约（参数、退出码、独立可跑性）前先想 WDC 调用方
+
 ## 红线（改动前自查）
 
 1. **版本钉子单一来源**：vp/lazygit/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它

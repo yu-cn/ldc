@@ -73,18 +73,16 @@ if [ -f "$HOME/.bashrc" ] && [ ! -L "$HOME/.bashrc" ]; then
         fi
     fi
 elif [ -L "$HOME/.bashrc" ]; then
-    step '.bashrc.local' SKIP 'bashrc 已被接管（非首次）'
-else
-    # 新机器无 ~/.bashrc：创建带注释的空 .local
-    if [ ! -e "$HOME/.bashrc.local" ]; then
-        {
-            echo '# ~/.bashrc.local — 机器自留地（ADR-0003）：LDC 不管理、不入仓库'
-            echo '# 本机私有别名/环境放这里，在模板 bashrc 最末尾加载、可覆盖模板。'
-        } > "$HOME/.bashrc.local"
-        step '.bashrc.local' CHANGED '已创建（新机器空自留地）'
-    else
-        step '.bashrc.local' SKIP '已存在'
-    fi
+    step '.bashrc.local' SKIP 'bashrc 已是符号链接（非首次接管，或外来管理器——WDC WSL 委托迁移场景，见 ADR-0007）'
+fi
+# 兜底：任何路径都保证 .bashrc.local 存在——模板末尾会 source 它；外来符号链接接管时
+# 原管理器（如 WDC）没建过自留地，新机器也可能根本没有 ~/.bashrc
+if [ ! -e "$HOME/.bashrc.local" ]; then
+    {
+        echo '# ~/.bashrc.local — 机器自留地（ADR-0003）：LDC 不管理、不入仓库'
+        echo '# 本机私有别名/环境放这里，在模板 bashrc 最末尾加载、可覆盖模板。'
+    } > "$HOME/.bashrc.local"
+    step '.bashrc.local' CHANGED '已创建（空自留地）'
 fi
 
 phase 'dotfiles · 符号链接'
