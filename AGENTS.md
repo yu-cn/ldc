@@ -7,7 +7,7 @@ LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可�
 - 文档、脚本注释、脚本输出**全中文**（对齐 WDC 习惯）；bash 脚本 `#!/usr/bin/env bash` + `set -uo pipefail`
 - 例外：`.githooks/pre-commit` 为有意的 POSIX `sh`（钩子在最小环境也要能跑），不套用 bash 条款
 - 输出口径统一走 `scripts/lib/common.sh` 的 `phase` / `step`（与 bootstrap/verify 同一观感）
-- 提交信息遵循 Conventional Commits：`type: 中文主题`（对齐 WDC 实际用法——feat / fix / docs / chore，type 后冒号+空格，不用 scope；工单/ADR/run id 锚点写在主题或正文；**不回改已发布历史**——tag 锚定旧提交，自 v0.4.0 起新提交生效）
+- 提交信息遵循 Conventional Commits 1.0.0（以官方规范为准，不止对齐 WDC 习惯）：结构 `<type>(可选 scope): 中文描述` + 空行 + 可选正文/脚注；feat/fix 为规范保留 type 且直接驱动版本号（feat→MINOR、fix→PATCH，v0.x 阶段破坏性变更按 semver 走 MINOR），扩展 type 用惯用集 build/chore/ci/docs/perf/refactor/revert/style/test；scope 可选、取名词（如 plan/docker）；描述动词开头、句末不加句号（Angular 惯例，规范不强制）；破坏性变更在 type 后加 `!` 或脚注 `BREAKING CHANGE: 说明`；工单/ADR/run id 锚点写正文或脚注（脚注用 git trailer 形态，如 `Refs: 工单07`）；**不回改已发布历史**——tag 锚定旧提交，自 v0.4.0 起新提交生效
 - ADR 风格：短、含取舍与「拒绝的替代」；新决策先写 ADR 再动代码
 
 ## 结构速览
