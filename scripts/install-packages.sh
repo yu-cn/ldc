@@ -15,11 +15,18 @@ export DEBIAN_FRONTEND=noninteractive
 fail=0
 
 add_vendor_repo() {
-    # add_vendor_repo <keyring名> <密钥URL> <源文件名> <源行> [direct] —— 厂商 apt 源（keyring 方式，幂等）
+    # add_vendor_repo <keyring名> <密钥URL> <源文件名> <源行> [direct] [源URL标记] —— 厂商 apt 源（幂等）
     # direct=密钥已是二进制 keyring 直接落盘；默认对 ASCII armored 密钥走 gpg --dearmor。
+    # 源URL标记=判重标记：厂商可能自管源（如 Chrome postinst 写 deb822 .sources 并清掉我们的 .list），
+    # 或机器上已有其它形态的同厂商源——标记命中任一源文件即视为已配置，避免双源（WDC 已知坑12 同款）
     # 失败即清理半成品，防空 keyring 破坏下次幂等判断
-    local keyring="/etc/apt/keyrings/$1" keyurl=$2 list="/etc/apt/sources.list.d/$3" line=$4 mode=${5:-dearmor}
+    local keyring="/etc/apt/keyrings/$1" keyurl=$2 list="/etc/apt/sources.list.d/$3" line=$4 mode=${5:-} marker=${6:-}
     [ -f "$keyring" ] && [ -f "$list" ] && return 0
+    # 标记用 ERE，可写交替分支（如 vscode 的新旧两条路径）；务必窄化到具体套件路径，
+    # packages.microsoft.com 等厂商域名下还有 dotnet 等其它仓库，宽标记会误判
+    if [ -n "$marker" ] && grep -rqE "$marker" /etc/apt/sources.list.d/ 2>/dev/null; then
+        return 0
+    fi
     install -m 0755 -d /etc/apt/keyrings
     if [ "$mode" = direct ]; then
         curl -fsSL "$keyurl" -o "$keyring" || { rm -f "$keyring"; return 1; }
@@ -54,6 +61,7 @@ else
     if add_vendor_repo githubcli-archive-keyring.gpg \
         https://cli.github.com/packages/githubcli-archive-keyring.gpg github-cli.list \
         "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" direct \
+        'cli\.github\.com/packages' \
        && apt-get update -qq && apt-get install -y -qq gh >/dev/null; then
         step gh OK '官方 apt 源安装'
     else
@@ -68,16 +76,25 @@ if ! have gsettings; then
 else
     arch=$(dpkg --print-architecture)
     ok_repo=1
+    # 清理旧版手动源残留：packages.microsoft.com/repos/code 是 repos/vscode 的前身路径，
+    # 手动装过 code 的机器两源并存（WDC 已知坑12 同款）——收敛到声明源
+    if [ -f /etc/apt/sources.list.d/vscode.sources ] \
+       && grep -q 'repos/code' /etc/apt/sources.list.d/vscode.sources 2>/dev/null; then
+        rm -f /etc/apt/sources.list.d/vscode.sources
+        step 'vscode 源' CHANGED '已清除旧版手动源（repos/code → 声明源 repos/vscode）'
+    fi
     if add_vendor_repo microsoft.gpg https://packages.microsoft.com/keys/microsoft.asc vscode.list \
-        "deb [arch=$arch signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main"; then
+        "deb [arch=$arch signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" \
+        '' 'packages\.microsoft\.com/repos/(vscode|code)' ; then
         step 'vscode 源' OK 'packages.microsoft.com（keyring）'
     else
         step 'vscode 源' FAIL '密钥/源配置失败'
         ok_repo=0; fail=$((fail + 1))
     fi
     if add_vendor_repo google.gpg https://dl.google.com/linux/linux_signing_key.pub google-chrome.list \
-        "deb [arch=$arch signed-by=/etc/apt/keyrings/google.gpg] https://dl.google.com/linux/chrome/deb/ stable main"; then
-        step 'chrome 源' OK 'dl.google.com（keyring）'
+        "deb [arch=$arch signed-by=/etc/apt/keyrings/google.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
+        '' 'dl\.google\.com/linux/chrome' ; then
+        step 'chrome 源' OK 'dl.google.com（keyring，或厂商自管源已在位）'
     else
         step 'chrome 源' FAIL '密钥/源配置失败'
         ok_repo=0; fail=$((fail + 1))
