@@ -20,6 +20,11 @@ v0.1.0 后的优化盘点（P1/P2 打包）：三项一致性欠账 + 三项有�
 - [ ] 漂移提示正例实测：临时改 dotfiles 模板 → 新开 shell 出黄字 → 还原后消失
 - [ ] CI：validate 绿 + handoff 腿 exit 2 断言过 + 双架构冒烟不受影响
 
-## 实录
+## 实录（2026-10-24）
 
-（执行后回填）
+- [x] validate 全绿，四组机制自测齐（架构映射 / 版本匹配边界 / 迁移抽取 fixture / CLI 错命令建议）
+- [x] 本机 bootstrap exit 0：starship SKIP=钉子 1.27.0（本机恰为最新）；字体首次补戳记重下（stamp=3.5.1，此后钉子不变即 SKIP）
+- [x] 漂移提示正反例实测：临时写穿 bashrc 模板 → 新开 shell 黄字「dotfiles 漂移 1 项」→ 还原后静默；另实测中「无漂移」对照出现的提示实为真阳性（自身未提交的模板改动被抓到），机制无误
+- [x] CI（run 40055310121）三腿全绿：**handoff: success**（非 root + 需密码 sudo → 断言 exit 2 + 交接命令，ADR-0004 首次 CI 实证）+ 双架构冒烟不受影响
+- starship 资产命名第三种约定入档：amd64→x86_64-unknown-linux-gnu、arm64→aarch64-unknown-linux-musl（aarch64 只发 musl 静态包，glibc 直接可用）
+- HANDOFF.md 已删（历史在首提）；AGENTS/GLOSSARY 钉子与移除清单措辞已修正
