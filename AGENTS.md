@@ -7,6 +7,7 @@ LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可�
 - 文档、脚本注释、脚本输出**全中文**（对齐 WDC 习惯）；bash 脚本 `#!/usr/bin/env bash` + `set -uo pipefail`
 - 例外：`.githooks/pre-commit` 为有意的 POSIX `sh`（钩子在最小环境也要能跑），不套用 bash 条款
 - 输出口径统一走 `scripts/lib/common.sh` 的 `phase` / `step`（与 bootstrap/verify 同一观感）
+- 提交信息遵循 Conventional Commits：`type: 中文主题`（对齐 WDC 实际用法——feat / fix / docs / chore，type 后冒号+空格，不用 scope；工单/ADR/run id 锚点写在主题或正文；**不回改已发布历史**——tag 锚定旧提交，自 v0.4.0 起新提交生效）
 - ADR 风格：短、含取舍与「拒绝的替代」；新决策先写 ADR 再动代码
 
 ## 结构速览
