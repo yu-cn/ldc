@@ -46,3 +46,7 @@ bash scripts/plan-machine.sh           # 干跑预演（只读）——改安装
 ```
 
 交付涉及提权/桌面/身份时，如实报告待办，不要把 SKIP/PENDING 说成 OK。
+
+## 已知坑
+
+1. **仓库缺席 → 系统配置死链失联**（2026-10-25 定性，实录自 WDC 侧同构事故，WDC 侧条目见其 docs/agents/collaboration.md 坑15）：`~/dev/ldc` 被删则 `~/.gitconfig` / `~/.bashrc` / `~/.config/starship.toml` 三条符号链接全变死链——Ubuntu 内 git 一切命令 fatal（**死链挡 clone 本身**，实测 exit 128）；bash/starship 静默降级；`~/.gitidentity` 不入仓库故幸存。两仓失效面互相隔离：删 LDC 不影响 Windows 侧（WDC 链接），反之亦然。恢复（无需提权）：`rm -f ~/.gitconfig` → `git clone https://github.com/yu-cn/ldc.git ~/dev/ldc`（同路径则 bashrc/starship 链即刻复活）→ `bash bootstrap.sh` 重链（install-dotfiles.sh 的 ln -sfn 天然覆盖死链）→ `bash scripts/verify-machine.sh --quick` 验收。WDC 的官方重装路径（install-wsl-env.ps1 → setup-ubuntu.sh ensure_ldc）已补死链预清，可自愈。
