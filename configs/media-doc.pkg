@@ -1,0 +1,6 @@
+# media-doc.pkg — 可选包组（ADR-0010）：文档/媒体转换，不随 bootstrap 自动安装
+# 用法：sudo bash scripts/install-packages.sh media-doc（装没装由 dpkg 记账，verify 不断言）
+# pandoc：md→docx/pdf 等文档转换（apt 版本随发行版，常规转换够用）
+# ffmpeg：音视频转换/抽帧/压缩（依赖树较大，故不入通用核心）
+pandoc
+ffmpeg

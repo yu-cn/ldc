@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # install-packages.sh — root 阶段：apt 包清单核销 + fd/bat 兼容链接 + gh 官方源 + Docker（ADR-0004）
 # 必须可独立 sudo 运行：cd <repo> && sudo bash scripts/install-packages.sh
+# 可选包组（ADR-0010）：附加参数显式指名——sudo bash scripts/install-packages.sh media-doc
+#   （清单即菜单 configs/<名>.pkg；装没装由 dpkg 记账，不进 verify/root 完成度）
 # 幂等：已装全部跳过；逐包失败不中断，结尾汇总非零退。容器 root 直跑同样成立（CI 冒烟路径）
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -48,6 +50,23 @@ phase 'root · 包清单核销（base-linux + cli-tools）'
 while read -r pkg; do
     pkg_install "$pkg" || fail=$((fail + 1))
 done < <(pkg_list base-linux.pkg && pkg_list cli-tools.pkg)
+
+# 可选包组（ADR-0010）：仅显式指名时安装——选择在调用时，激活态即 dpkg 状态
+if [ $# -gt 0 ]; then
+    phase 'root · 可选包组（显式指名）'
+    for name in "$@"; do
+        if [ ! -f "$ROOT/configs/$name.pkg" ]; then
+            available=''
+            for m in "$ROOT"/configs/*.pkg; do available+=" ${m##*/}"; done
+            step "可选包组 $name" FAIL "configs/$name.pkg 不存在——可用：${available//.pkg/}"
+            fail=$((fail + 1))
+            continue
+        fi
+        while read -r pkg; do
+            pkg_install "$pkg" || fail=$((fail + 1))
+        done < <(pkg_list "$name.pkg")
+    done
+fi
 
 phase 'root · Debian 命名兼容链接（fd/bat）'
 # Debian 系 fd-find/bat 的二进制名是 fdfind/batcat——不补链接则模板别名断链

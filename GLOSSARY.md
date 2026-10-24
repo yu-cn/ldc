@@ -8,6 +8,8 @@
 | **dotfiles 层** | `dotfiles/` 仓库目录，符号链接安装到 `~`（旧文件备份 `*.bak`） |
 | **域** | 一份清单对应的一个覆盖面：base-linux / cli-tools / desktop（GNOME 桌面域）/ desktop-apps（桌面应用域） |
 | **通用核心** | 「每台 Ubuntu/Debian 开发机都需要」的内容，判据决定什么进仓库（ADR-0003） |
+| **可选包组** | 常用但非每台必需的工具清单（如 media-doc）：平铺 `configs/<名>.pkg`，指名安装、装没装由 dpkg 记账，不进断言面（ADR-0010） |
+| **干跑预演（plan）** | 只读投影「重跑会做什么」：OK=已就位 / PLAN=将变更 / SKIP=不适用 / INFO=需手工；与 verify（断言现状）互补，sudo 前先看一眼 |
 | **机器自留地** | 机器私有内容，不入仓库不受移除清单影响；shell 侧的载体是 `~/.bashrc.local` |
 | **`.bashrc.local`** | 机器自留地的 shell 段：首次接管时从原 bashrc 迁移标记块/nvm 块而来，模板最末尾加载、可覆盖模板 |
 | **`.gitconfig.local`** | 机器自留地的 git 段（与 .bashrc.local 同构）：gh 凭据助手等按机配置，模板经 `[include]` 引用 |

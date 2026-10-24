@@ -11,8 +11,8 @@ LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可�
 
 ## 结构速览
 
-- `configs/` 声明式层（清单与版本钉子） · `scripts/` 编排层 · `dotfiles/` dotfiles 层（ADR-0002）
-- `bootstrap.sh` 唯一入口 · `validate.sh` 无副作用校验 · `ldc` CLI · `scripts/verify-machine.sh` 机器断言
+- `configs/` 声明式层（清单与版本钉子；可选包组平铺其中——指名安装、不进断言，ADR-0010） · `scripts/` 编排层 · `dotfiles/` dotfiles 层（ADR-0002）
+- `bootstrap.sh` 唯一入口 · `validate.sh` 无副作用校验 · `ldc` CLI · `scripts/verify-machine.sh` 机器断言 · `scripts/plan-machine.sh` 干跑预演（只读）
 
 ## 姊妹仓库 WDC 统筹（ADR-0007）
 
@@ -24,7 +24,7 @@ LDC 与 WDC 同主人关联项目，改动需跨仓库统筹：
 
 ## 红线（改动前自查）
 
-1. **版本钉子单一来源**：vp/lazygit/starship/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它（starship 的 rust 资产命名与 lazygit 的 x86_64 例外都在 install-user-tools 调用点注释）
+1. **版本钉子单一来源**：vp/lazygit/starship/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它（starship 的 rust 资产命名与 lazygit 的 x86_64 例外都在 install-user-tools 调用点注释）；starship/lazygit/nerd-fonts 的 sha256 行（`sha256 [amd64|arm64] <hex>`）与版本行同文件同次更新、重算自官方 release 资产（ADR-0011）
 2. **`.bashrc.local` / `.gitconfig.local` 是机器自留地**：永不入仓库、永不覆写（已存在只提示）；nvm 属自留地，不卸载、不主动清理（LDC 是「只装不删」语义，无移除清单——WDC 的 remove-leftovers 不搬过来）
 3. **git 身份不入仓库**：模板经 `[include] path = ~/.gitidentity` 引用；占位文件的 name/email 必须保持注释态（这是「未填则拒提交」护栏生效的前提）
 4. **dotfiles 落点是符号链接**：任何写穿（机器工具直改模板）都是漂移，verify 有断言、triage 负责分流
@@ -33,12 +33,14 @@ LDC 与 WDC 同主人关联项目，改动需跨仓库统筹：
 7. **exit 码语义**：0 就绪 / 1 失败 / 2 有待办手工步骤——`ldc status` 与 CI 依赖此约定
 8. **架构适配单点**（ADR-0006）：新增二进制下载一律经 `ldc_arch()` 取资产段（amd64/arm64），勿散落 `uname -m` 判断；CI 双架构冒烟矩阵是承诺的验证面
 9. **daemon.json 只做受保护合并**（ADR-0009）：jq 递归合并，声明叶键胜出、机器自有键保留，绝不整文件接管、绝不自动重启 docker
+10. **可选包组不进断言面**（ADR-0010）：通用核心之外的清单（configs/ 下 base-linux/cli-tools/desktop-apps 以外的 .pkg）只经 install-packages.sh 显式指名安装，装没装由 dpkg 记账——不进 verify / root_stage_complete，不建激活文件、不做交互选择
 
 ## 修改后的自查
 
 ```bash
 bash validate.sh                      # bash -n + shellcheck（如在）+ 清单格式
 bash scripts/verify-machine.sh --quick # 本机断言（只读）
+bash scripts/plan-machine.sh           # 干跑预演（只读）——改安装面后看投影是否符合预期
 ```
 
 交付涉及提权/桌面/身份时，如实报告待办，不要把 SKIP/PENDING 说成 OK。

@@ -5,9 +5,9 @@
 # 颜色：输出到终端时着色；重定向/tee 时自动素净（日志文件干净）
 if [ -t 1 ]; then
     C_OK=$'\e[32m'; C_SKIP=$'\e[90m'; C_FAIL=$'\e[31m'
-    C_CHANGED=$'\e[33m'; C_PHASE=$'\e[1;36m'; C_OFF=$'\e[0m'
+    C_CHANGED=$'\e[33m'; C_PHASE=$'\e[1;36m'; C_PLAN=$'\e[35m'; C_OFF=$'\e[0m'
 else
-    C_OK=''; C_SKIP=''; C_FAIL=''; C_CHANGED=''; C_PHASE=''; C_OFF=''
+    C_OK=''; C_SKIP=''; C_FAIL=''; C_CHANGED=''; C_PHASE=''; C_PLAN=''; C_OFF=''
 fi
 
 log()   { printf '[ldc] %s\n' "$*"; }
@@ -15,13 +15,15 @@ log()   { printf '[ldc] %s\n' "$*"; }
 phase() { printf '\n%s=== %s ===%s\n' "$C_PHASE" "$*" "$C_OFF"; }
 
 step() {
-    # step <标签> <状态> [详情]；状态 ∈ OK/SKIP/FAIL/CHANGED/PENDING/INFO
+    # step <标签> <状态> [详情]；状态 ∈ OK/SKIP/FAIL/CHANGED/PENDING/INFO/PLAN
+    # PLAN = 干跑预演的「将变更」（plan-machine.sh 专用——只投影，不改任何状态）
     local label=$1 state=$2 detail=${3:-} color
     case $state in
         OK)      color=$C_OK ;;
         SKIP)    color=$C_SKIP ;;
         FAIL)    color=$C_FAIL ;;
         CHANGED) color=$C_CHANGED ;;
+        PLAN)    color=$C_PLAN ;;
         *)       color='' ;;
     esac
     local line="[$state] $label"
@@ -57,6 +59,21 @@ pin_of() {
     val=$(head -n1 "$f" | tr -d '[:space:]')
     if [ -z "$val" ]; then log "ERROR: $f 首行为空"; return 1; fi
     printf '%s\n' "$val"
+}
+
+pin_sha256() {
+    # pin_sha256 <钉子文件名> [arch] —— 下载资产校验和（ADR-0011 供应链钉）：
+    # 钉子文件 sha256 行格式 `sha256 <hex>`（arch 无关资产）或 `sha256 <arch> <hex>`（分架构资产）；
+    # 传 arch 取对应行，未传取无 arch 行。无该行返回 1（调用方决定降级口径）。
+    local f val
+    f="$(ldc_repo)/configs/$1"
+    if [ ! -f "$f" ]; then log "ERROR: 缺失 $f"; return 1; fi
+    if [ -n "${2:-}" ]; then
+        val=$(grep -E "^sha256 $2 [0-9a-f]{64}$" "$f" | head -n1 | awk '{print $3}')
+    else
+        val=$(grep -E "^sha256 [0-9a-f]{64}$" "$f" | head -n1 | awk '{print $2}')
+    fi
+    [ -n "$val" ] && printf '%s\n' "$val"
 }
 
 pkg_list() {

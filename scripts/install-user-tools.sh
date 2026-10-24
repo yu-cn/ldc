@@ -75,11 +75,23 @@ else
         esac
         url="https://github.com/starship/starship/releases/download/v${SS_VERSION}/starship-${ss_asset}.tar.gz"
         tmp=$(mktemp -d)
-        if curl -fsSL "$url" | tar -xzf - -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/starship" "$ss_bin"; then
-            if [ -n "$ss_current" ]; then step starship CHANGED "升级 → $SS_VERSION（$ss_bin）"
-            else step starship OK "$SS_VERSION → $ss_bin"; fi
+        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011）再解压安装——不符即拒绝
+        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
+            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
+            want="$(pin_sha256 starship-version "$arch" || true)"
+            if [ -n "$want" ] && [ "$got" != "$want" ]; then
+                step 'starship 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
+                fail=$((fail + 1))
+            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/starship" "$ss_bin"; then
+                [ -z "$want" ] && step 'starship 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
+                if [ -n "$ss_current" ]; then step starship CHANGED "升级 → $SS_VERSION（$ss_bin）"
+                else step starship OK "$SS_VERSION → $ss_bin"; fi
+            else
+                step starship FAIL "解压/安装失败（$url）"
+                fail=$((fail + 1))
+            fi
         else
-            step starship FAIL "下载/安装失败（$url）"
+            step starship FAIL "下载失败（$url）"
             fail=$((fail + 1))
         fi
         rm -rf "$tmp"
@@ -100,11 +112,23 @@ else
         [ "$lg_arch" = amd64 ] && lg_arch=x86_64
         url="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_linux_${lg_arch}.tar.gz"
         tmp=$(mktemp -d)
-        if curl -fsSL "$url" | tar -xzf - -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/lazygit" "$lg_bin"; then
-            if [ -n "$lg_current" ]; then step lazygit CHANGED "升级 → $LG_VERSION（$lg_bin）"
-            else step lazygit OK "$LG_VERSION → $lg_bin"; fi
+        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011）再解压安装——不符即拒绝
+        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
+            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
+            want="$(pin_sha256 lazygit-version "$arch" || true)"
+            if [ -n "$want" ] && [ "$got" != "$want" ]; then
+                step 'lazygit 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
+                fail=$((fail + 1))
+            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/lazygit" "$lg_bin"; then
+                [ -z "$want" ] && step 'lazygit 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
+                if [ -n "$lg_current" ]; then step lazygit CHANGED "升级 → $LG_VERSION（$lg_bin）"
+                else step lazygit OK "$LG_VERSION → $lg_bin"; fi
+            else
+                step lazygit FAIL "解压/安装失败（$url）"
+                fail=$((fail + 1))
+            fi
         else
-            step lazygit FAIL "下载/安装失败（$url）"
+            step lazygit FAIL "下载失败（$url）"
             fail=$((fail + 1))
         fi
         rm -rf "$tmp"
@@ -125,11 +149,23 @@ else
         url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${NF_VERSION}/JetBrainsMono.zip"
         mkdir -p "$fontdir"
         tmp=$(mktemp -d)
-        if curl -fsSL -o "$tmp/JetBrainsMono.zip" "$url" && unzip -oq "$tmp/JetBrainsMono.zip" -d "$fontdir"; then
-            printf '%s\n' "$NF_VERSION" > "$stamp"
-            step '字体' CHANGED "v$NF_VERSION → $fontdir"
+        # 校验 sha256（钉子文件无 arch 行，字体包不分架构，ADR-0011）再解压
+        if curl -fsSL -o "$tmp/JetBrainsMono.zip" "$url"; then
+            got=$(sha256sum "$tmp/JetBrainsMono.zip" | awk '{print $1}')
+            want="$(pin_sha256 nerd-fonts-version || true)"
+            if [ -n "$want" ] && [ "$got" != "$want" ]; then
+                step '字体 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
+                fail=$((fail + 1))
+            elif unzip -oq "$tmp/JetBrainsMono.zip" -d "$fontdir"; then
+                [ -z "$want" ] && step '字体 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
+                printf '%s\n' "$NF_VERSION" > "$stamp"
+                step '字体' CHANGED "v$NF_VERSION → $fontdir"
+            else
+                step '字体' FAIL '解压失败'
+                fail=$((fail + 1))
+            fi
         else
-            step '字体' FAIL "下载/解压失败（$url）"
+            step '字体' FAIL "下载失败（$url）"
             fail=$((fail + 1))
         fi
         rm -rf "$tmp"

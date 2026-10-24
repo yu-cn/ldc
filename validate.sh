@@ -75,7 +75,14 @@ fi
 for v in vp-version lazygit-version nerd-fonts-version; do
     val=$(head -n1 "$ROOT/configs/$v" | tr -d '[:space:]')
     if [[ $val =~ ^[A-Za-z0-9][A-Za-z0-9.]*$ ]]; then
-        step "configs/$v" OK "$val"
+        # ADR-0011：sha256 行（若有）格式——`sha256 <hex>` 或 `sha256 amd64|arm64 <hex>`
+        bad=$(grep -vE '^[[:space:]]*(#|$)|^[A-Za-z0-9][A-Za-z0-9.]*[[:space:]]*$|^sha256( (amd64|arm64))? [0-9a-f]{64}[[:space:]]*$' "$ROOT/configs/$v" || true)
+        if [ -z "$bad" ]; then
+            step "configs/$v" OK "$val"
+        else
+            step "configs/$v" FAIL "sha256 行应为 sha256 [amd64|arm64] <64位hex>：$(printf '%s' "$bad" | head -n 1)"
+            fail=$((fail + 1))
+        fi
     else
         step "configs/$v" FAIL '应为非空单行版本号'
         fail=$((fail + 1))
