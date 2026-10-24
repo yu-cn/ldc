@@ -2,13 +2,48 @@
 
 > clone 之后一条命令，任何一台 Ubuntu/Debian 机器收敛到声明状态：软件、语言运行时、CLI 工具、GNOME 桌面偏好、dotfiles——幂等、可重放、可迁移。
 
+[![validate](https://github.com/yu-cn/ldc/actions/workflows/validate.yml/badge.svg)](https://github.com/yu-cn/ldc/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 基于 [WDC](https://github.com/yu-cn/wdc)（Windows + WSL 同思路仓库）的经验自建，独立仓库不 fork（[ADR-0001](docs/adr/0001-own-tree-not-fork-wdc.md)）。两仓为**对等的关联项目**：WDC 主管 Windows 侧，LDC 主管 Linux 侧（含 WSL Ubuntu），各自完整自闭环；WSL 的 Linux 收敛由 WDC 移交 LDC（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md)）。仓库以 [MIT](LICENSE) 开源，欢迎直接使用或 fork 改造成你自己的环境。
 
 **支持的机器形态**：Ubuntu/Debian · **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
 
 **安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· dotfiles 落点符号链接、旧文件备份 `*.bak` · Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
 
-## 一条命令得到什么
+## 快速开始（新机器）
+
+前置：装好 git 与 curl（`sudo apt update && sudo apt install -y git curl`）。然后：
+
+```bash
+git clone https://github.com/yu-cn/ldc.git ldc && cd ldc
+bash bootstrap.sh
+```
+
+fork 改造成自己环境的用户把 clone 地址换成你的仓库即可——`ldc sync` 跟随你 clone 的远端；直接使用者保持上面的地址，`ldc sync` 一键跟进上游演进。
+
+七阶段：预检 → 无副作用校验 → root 阶段 → user 工具 → 桌面 → dotfiles → 汇总，全程日志落 `logs/bootstrap-<时间戳>.log`。重跑幂等：已就位的全部跳过。收敛完成后验收：`bash scripts/verify-machine.sh`（全绿即与声明一致）。
+
+**sudo 需密码的机器**（服务器常态）：bootstrap 不打断、不静默——root 阶段留待交接，末尾打印单条命令：
+
+```bash
+cd <repo> && sudo bash scripts/install-packages.sh
+```
+
+退出码：`0` 全部就绪 · `1` 有失败 · `2` 有待办手工步骤（root 交接 / `~/.gitidentity` 未填 / 桌面待登录重跑）。
+
+<details>
+<summary><strong>首次运行你需要配合的四件事</strong></summary>
+
+1. **root 阶段交接**——sudo 需密码时按末尾打印的命令手动执行（agent/CI 无法替你输密码）
+2. **填写身份**——bootstrap 生成 `~/.gitidentity` 占位后，填上**本机**的 git name/email（占位未填则 git 拒绝提交，这是防错护栏），然后做首次 commit：`git add -A && git commit -m "Initial LDC scaffold"`
+3. **桌面域**——有 GNOME 的机器在 SSH 上下文会 SKIP，登录桌面会话后重跑 `bash bootstrap.sh`（或 `ldc sync`）应用 gsettings 与字体
+4. **关闭 VSCode 设置同步**（桌面应用域机器）——首次启动 VSCode 若已登录账号，关闭「设置同步」：它是账号级开关、配置文件管不到；不关的话云端会与仓库 dotfiles 打架（仓库是唯一主人）
+
+</details>
+
+<details>
+<summary><strong>一条命令得到什么</strong>（点开看完整清单）</summary>
 
 **系统**（root 阶段，[base-linux](configs/base-linux.pkg) + [cli-tools](configs/cli-tools.pkg)）
 build-essential · git · curl/wget · jq · fzf / ripgrep / bat / fd / zoxide / eza / git-delta / tree / htop / shellcheck · gh（官方 apt 源）· Docker Engine（已装则跳过，默认用户入 docker 组；daemon.json [受保护合并](configs/docker-daemon.json)声明日志轮转与 live-restore——机器自有键保留，不自动重启，[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）
@@ -30,33 +65,6 @@ VSCode（packages.microsoft.com 源）+ [30 个扩展](configs/vscode-extensions
 
 **dotfiles**（[dotfiles/](dotfiles/)，符号链接安装，旧文件备份 `*.bak`）
 bashrc（历史/别名/fzf/zoxide/starship + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml · VSCode settings/keybindings（桌面应用域机器）
-
-## 快速开始（新机器）
-
-前置：装好 git 与 curl（`sudo apt update && sudo apt install -y git curl`）。然后：
-
-```bash
-git clone <你的仓库地址> ldc && cd ldc
-bash bootstrap.sh
-```
-
-七阶段：预检 → 无副作用校验 → root 阶段 → user 工具 → 桌面 → dotfiles → 汇总，全程日志落 `logs/bootstrap-<时间戳>.log`。重跑幂等：已就位的全部跳过。
-
-**sudo 需密码的机器**（服务器常态）：bootstrap 不打断、不静默——root 阶段留待交接，末尾打印单条命令：
-
-```bash
-cd <repo> && sudo bash scripts/install-packages.sh
-```
-
-退出码：`0` 全部就绪 · `1` 有失败 · `2` 有待办手工步骤（root 交接 / `~/.gitidentity` 未填 / 桌面待登录重跑）。
-
-<details>
-<summary><strong>首次运行你需要配合的四件事</strong></summary>
-
-1. **root 阶段交接**——sudo 需密码时按末尾打印的命令手动执行（agent/CI 无法替你输密码）
-2. **填写身份**——bootstrap 生成 `~/.gitidentity` 占位后，填上**本机**的 git name/email（占位未填则 git 拒绝提交，这是防错护栏），然后做首次 commit：`git add -A && git commit -m "Initial LDC scaffold"`
-3. **桌面域**——有 GNOME 的机器在 SSH 上下文会 SKIP，登录桌面会话后重跑 `bash bootstrap.sh`（或 `ldc sync`）应用 gsettings 与字体
-4. **关闭 VSCode 设置同步**（桌面应用域机器）——首次启动 VSCode 若已登录账号，关闭「设置同步」：它是账号级开关、配置文件管不到；不关的话云端会与仓库 dotfiles 打架（仓库是唯一主人）
 
 </details>
 
