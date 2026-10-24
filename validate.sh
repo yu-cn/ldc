@@ -90,8 +90,7 @@ for f in dotfiles/linux/bashrc dotfiles/linux/gitconfig dotfiles/shared/starship
         fail=$((fail + 1))
     fi
 done
-# 架构映射自测（ADR-0006）：ldc_arch 是全仓库唯一架构判断点，离线可验——双架构映射各归其位、
-# 不受支持架构必须拒绝。CI 双架构冒烟补真实下载面，这里补逻辑面
+# 关键机制自测（离线单测；CI 冒烟补真实下载面，这里补逻辑面）
 arch_ok=1
 [ "$(ldc_arch x86_64)" = amd64 ] || arch_ok=0
 [ "$(ldc_arch aarch64)" = arm64 ] || arch_ok=0
@@ -101,6 +100,55 @@ if [ "$arch_ok" -eq 1 ]; then
     step '架构映射自测（ldc_arch）' OK 'x86_64→amd64 · aarch64/arm64→arm64 · 其余拒绝'
 else
     step '架构映射自测（ldc_arch）' FAIL '映射不符预期'
+    fail=$((fail + 1))
+fi
+# version_matches 边界：钉子不得误配更长数字段（1.3.0 ≠ 11.3.0）
+vm_ok=1
+version_matches 'vp 1.3.0 (commit abc)' '1.3.0' || vm_ok=0
+version_matches 'lazygit version=0.66.2, d1a2b3' '0.66.2' || vm_ok=0
+if version_matches 'uv 11.3.0' '1.3.0'; then vm_ok=0; fi
+if version_matches 'starship 1.27.10' '1.27.0'; then vm_ok=0; fi
+if [ "$vm_ok" -eq 1 ]; then
+    step '版本匹配自测（version_matches）' OK '命中两例 · 拒绝误配两例'
+else
+    step '版本匹配自测（version_matches）' FAIL '边界行为不符预期'
+    fail=$((fail + 1))
+fi
+# .bashrc.local 迁移抽取自测：标记块 + nvm 三行块，段间空行（ADR-0003 核心机制）
+fx=$(mktemp)
+cat > "$fx" <<'FXEOF'
+# 原生段（不迁移）
+export A=1
+# >>> block one >>>
+inner1
+# <<< block one <<<
+export B=2
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+export C=3
+FXEOF
+fx_expect='# >>> block one >>>
+inner1
+# <<< block one <<<
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"'
+if [ "$(bashrc_local_extract "$fx")" = "$fx_expect" ]; then
+    step '迁移抽取自测（bashrc_local_extract）' OK '标记块 + nvm 块、段间空行'
+else
+    step '迁移抽取自测（bashrc_local_extract）' FAIL '抽取结果与预期不符'
+    fail=$((fail + 1))
+fi
+rm -f "$fx"
+# ldc 错命令建议（集成）：建议逻辑在仓库定位之前，无需 ~/.ldc 指针
+bad_out=$(bash "$ROOT/ldc" syncz 2>&1)
+bad_rc=$?
+if [ "$bad_rc" -eq 1 ] && printf '%s' "$bad_out" | grep -q '你是想输「sync」吗'; then
+    step 'CLI 建议自测（ldc 错命令）' OK 'syncz → sync，退出码 1'
+else
+    step 'CLI 建议自测（ldc 错命令）' FAIL '建议或退出码不符预期'
     fail=$((fail + 1))
 fi
 

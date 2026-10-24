@@ -59,14 +59,31 @@ if [ -n "$vp_bin" ]; then
 fi
 
 phase 'user 工具 · starship'
-if have starship || [ -x "$HOME/.local/bin/starship" ]; then
-    step starship SKIP '已装'
-elif curl -sS https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" >/dev/null; then
-    # -b 指定用户级目录（官方默认 /usr/local/bin 需 sudo；user 阶段保持免提权）
-    step starship OK '官方安装器 → ~/.local/bin'
+SS_VERSION="$(pin_of starship-version)" || exit 1
+ss_bin="$HOME/.local/bin/starship"
+ss_current="$("$ss_bin" --version 2>/dev/null || true)"
+if [ -x "$ss_bin" ] && version_matches "$ss_current" "$SS_VERSION"; then
+    step starship SKIP "= 钉子 $SS_VERSION"
 else
-    step starship FAIL '安装器执行失败'
-    fail=$((fail + 1))
+    # 资产命名例外（rust triple）：amd64→x86_64-unknown-linux-gnu，arm64→aarch64-unknown-linux-musl
+    #（starship 对 aarch64 只发 musl 静态包，glibc 系统直接可用）
+    arch="$(ldc_arch)" || fail=$((fail + 1))
+    if [ -n "${arch:-}" ]; then
+        case $arch in
+            amd64) ss_asset=x86_64-unknown-linux-gnu ;;
+            arm64) ss_asset=aarch64-unknown-linux-musl ;;
+        esac
+        url="https://github.com/starship/starship/releases/download/v${SS_VERSION}/starship-${ss_asset}.tar.gz"
+        tmp=$(mktemp -d)
+        if curl -fsSL "$url" | tar -xzf - -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/starship" "$ss_bin"; then
+            if [ -n "$ss_current" ]; then step starship CHANGED "升级 → $SS_VERSION（$ss_bin）"
+            else step starship OK "$SS_VERSION → $ss_bin"; fi
+        else
+            step starship FAIL "下载/安装失败（$url）"
+            fail=$((fail + 1))
+        fi
+        rm -rf "$tmp"
+    fi
 fi
 
 phase 'user 工具 · lazygit'
@@ -100,13 +117,16 @@ if ! have gsettings; then
 else
     NF_VERSION="$(pin_of nerd-fonts-version)" || exit 1
     fontdir="$HOME/.local/share/fonts/JetBrainsMono-NF"
-    if [ -d "$fontdir" ] && [ -n "$(ls -A "$fontdir" 2>/dev/null)" ]; then
-        step '字体' SKIP "已装（$fontdir）"
+    stamp="$fontdir/.ldc-version"
+    # 版本戳记：钉子升级即重装（字体包无自报版本，戳记是唯一判据）
+    if [ -d "$fontdir" ] && [ -f "$stamp" ] && [ "$(cat "$stamp" 2>/dev/null)" = "$NF_VERSION" ]; then
+        step '字体' SKIP "= 钉子 $NF_VERSION（$fontdir）"
     else
         url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${NF_VERSION}/JetBrainsMono.zip"
         mkdir -p "$fontdir"
         tmp=$(mktemp -d)
         if curl -fsSL -o "$tmp/JetBrainsMono.zip" "$url" && unzip -oq "$tmp/JetBrainsMono.zip" -d "$fontdir"; then
+            printf '%s\n' "$NF_VERSION" > "$stamp"
             step '字体' CHANGED "v$NF_VERSION → $fontdir"
         else
             step '字体' FAIL "下载/解压失败（$url）"

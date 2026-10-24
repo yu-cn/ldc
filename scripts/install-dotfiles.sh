@@ -50,16 +50,8 @@ if [ -f "$HOME/.bashrc" ] && [ ! -L "$HOME/.bashrc" ]; then
     if [ -e "$HOME/.bashrc.local" ]; then
         step '.bashrc.local' SKIP '已存在，不覆盖（机主维护）'
     else
-        # 抽取标记块与 nvm 块（awk：段间补空行；无命中则生成带注释的空 .local）
-        extracted=$(awk '
-            BEGIN { first = 1 }
-            function seg() { if (!first) print ""; first = 0 }
-            /^#[[:space:]]*>>>/ { seg(); inblk = 1; print; next }
-            /^#[[:space:]]*<<</ { if (inblk) { print; inblk = 0 }; next }
-            inblk { print; next }
-            /^export NVM_DIR=/ { seg(); nvm = 3 }
-            nvm > 0 { print; nvm--; next }
-        ' "$HOME/.bashrc")
+        # 标记块/nvm 块抽取走 common.sh 的 bashrc_local_extract（validate 自测共用）
+        extracted=$(bashrc_local_extract "$HOME/.bashrc")
         {
             echo '# ~/.bashrc.local — 机器自留地（ADR-0003）：LDC 不管理、不入仓库'
             echo '# 由 bootstrap 首次接管 ~/.bashrc 时自动迁移（标记块 + nvm 块）；此后由机主自行维护。'

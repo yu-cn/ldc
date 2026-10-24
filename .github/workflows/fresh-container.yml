@@ -12,6 +12,36 @@ on:
     - cron: '0 3 * * 1'   # 每周一 03:00 UTC
 
 jobs:
+  handoff:
+    # ADR-0004 交接路径实证（下方 smoke 矩阵只覆盖 root 内联路径）：非 root 用户 + 装了 sudo
+    # 但未免密 → sudo_probe=interactive → bootstrap 应 exit 2 并打印单条交接命令，其余阶段照常
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: ubuntu:24.04
+    steps:
+      - name: 前置 + fresh clone（非 root 用户）
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq git curl ca-certificates sudo >/dev/null
+          useradd -m -s /bin/bash dev
+          git clone "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" /home/dev/ldc
+          chown -R dev:dev /home/dev/ldc
+      - name: bootstrap（应走交接路径：exit 2 + 交接命令）
+        run: |
+          set +e
+          su dev -c 'cd ~/ldc && LDC_SMOKE=1 bash bootstrap.sh' > /tmp/boot.log 2>&1
+          rc=$?
+          cat /tmp/boot.log
+          [ "$rc" -eq 2 ] || { echo "::error::期望 exit 2（交接待办），实际 $rc"; exit 1; }
+          grep -q 'root 阶段交接' /tmp/boot.log || { echo "::error::未见交接命令块"; exit 1; }
+          grep -q 'sudo bash scripts/install-packages.sh' /tmp/boot.log || { echo "::error::交接命令内容不符"; exit 1; }
+      - name: 上传交接路径日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: handoff-bootstrap-log
+          path: /tmp/boot.log
+
   smoke:
     runs-on: ${{ matrix.runner }}
     strategy:

@@ -24,8 +24,8 @@ LDC 与 WDC 同主人关联项目，改动需跨仓库统筹：
 
 ## 红线（改动前自查）
 
-1. **版本钉子单一来源**：vp/lazygit/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它
-2. **`.bashrc.local` / `.gitconfig.local` 是机器自留地**：永不入仓库、永不覆写（已存在只提示）；nvm 属自留地，不卸载、不进移除清单
+1. **版本钉子单一来源**：vp/lazygit/starship/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它（starship 的 rust 资产命名与 lazygit 的 x86_64 例外都在 install-user-tools 调用点注释）
+2. **`.bashrc.local` / `.gitconfig.local` 是机器自留地**：永不入仓库、永不覆写（已存在只提示）；nvm 属自留地，不卸载、不主动清理（LDC 是「只装不删」语义，无移除清单——WDC 的 remove-leftovers 不搬过来）
 3. **git 身份不入仓库**：模板经 `[include] path = ~/.gitidentity` 引用；占位文件的 name/email 必须保持注释态（这是「未填则拒提交」护栏生效的前提）
 4. **dotfiles 落点是符号链接**：任何写穿（机器工具直改模板）都是漂移，verify 有断言、triage 负责分流
 5. **不替用户做首次 commit**：身份未填时提交会造出占位作者污染历史；交接命令见 README/AGENTS 惯例

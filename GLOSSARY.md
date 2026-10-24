@@ -11,7 +11,7 @@
 | **机器自留地** | 机器私有内容，不入仓库不受移除清单影响；shell 侧的载体是 `~/.bashrc.local` |
 | **`.bashrc.local`** | 机器自留地的 shell 段：首次接管时从原 bashrc 迁移标记块/nvm 块而来，模板最末尾加载、可覆盖模板 |
 | **`.gitconfig.local`** | 机器自留地的 git 段（与 .bashrc.local 同构）：gh 凭据助手等按机配置，模板经 `[include]` 引用 |
-| **钉子** | 版本钉子：`configs/*-version` 单一来源，升级只改这一个文件（vp / lazygit / nerd-fonts） |
+| **钉子** | 版本钉子：`configs/*-version` 单一来源，升级只改这一个文件（vp / lazygit / starship / nerd-fonts，漂移自动收敛） |
 | **架构映射** | `ldc_arch()`：全仓库唯一的架构判断点，`uname -m` → GitHub 资产段（amd64/arm64）；其它架构拒绝（ADR-0006） |
 | **root 阶段** | 需提权的系统层：apt 清单核销 + gh 官方源 + Docker（`install-packages.sh`，可独立 sudo） |
 | **user 阶段** | 免提权的用户层：uv / vp / starship / lazygit / 字体 + dotfiles |

@@ -131,6 +131,21 @@ version_matches() {
     printf '%s' "$1" | grep -qE "(^|[^0-9.])$2([^0-9.]|$)"
 }
 
+bashrc_local_extract() {
+    # bashrc_local_extract <bashrc 文件> —— 抽取机器自留地段（ADR-0003 迁移机制）：
+    # 全部标记块（# >>> ... >>> .. # <<< ... <<<，含端点）与 nvm 块（export NVM_DIR= 起三行），
+    # 段间补空行。install-dotfiles 与 validate 自测共用（单一来源）
+    awk '
+        BEGIN { first = 1 }
+        function seg() { if (!first) print ""; first = 0 }
+        /^#[[:space:]]*>>>/ { seg(); inblk = 1; print; next }
+        /^#[[:space:]]*<<</ { if (inblk) { print; inblk = 0 }; next }
+        inblk { print; next }
+        /^export NVM_DIR=/ { seg(); nvm = 3 }
+        nvm > 0 { print; nvm--; next }
+    ' "$1"
+}
+
 git_identity_ok() {
     # 身份经 include 链生效（效果级，与 verify 断言同口径）；只判非空不取值——身份内容不进日志
     [ -n "$(git config --global --includes --get user.name 2>/dev/null)" ] && \

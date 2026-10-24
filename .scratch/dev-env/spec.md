@@ -1,6 +1,6 @@
 # LDC v1 规格（摘要）
 
-> 完整背景见仓库根 HANDOFF.md（交接文档，v1 收官后可删）与 docs/adr/。本文件是 .scratch 工单流的规格锚点。
+> 完整背景见 docs/adr/（原仓库根 HANDOFF.md 交接文档已于 v1 收官后移除，历史见 git 首提）。本文件是 .scratch 工单流的规格锚点。
 
 ## 目标
 
