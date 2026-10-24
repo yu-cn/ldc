@@ -56,11 +56,11 @@ done
 for m in "$ROOT"/configs/*.gsettings; do
     rel=${m#"$ROOT"/}
     bad=$(grep -vE '^[[:space:]]*(#|$)' "$m" \
-          | grep -vE "^[a-zA-Z0-9.-]+[[:space:]]+[a-zA-Z0-9._-]+[[:space:]]+('[^']*'|true|false)[[:space:]]*$" || true)
+          | grep -vE "^[a-zA-Z0-9.-]+[[:space:]]+[a-zA-Z0-9._-]+[[:space:]]+('[^']*'|true|false|\[[^]]*\])[[:space:]]*$" || true)
     if [ -z "$bad" ]; then
         step "$rel" OK
     else
-        step "$rel" FAIL "格式应为 schema key value：$(printf '%s' "$bad" | head -n 1)"
+        step "$rel" FAIL "格式应为 schema key value（value 为引号串/布尔/列表）：$(printf '%s' "$bad" | head -n 1)"
         fail=$((fail + 1))
     fi
 done

@@ -27,3 +27,4 @@
 - [x] 意外发现：本机 `code` 为用户此前自行 dpkg 安装（时间戳早于仓库存在）——desktop-apps 的 code 断言直接 OK，扩展 30/30 已装进现有 VSCode；唯一待交接项 = google-chrome-stable
 - [x] verify 全量：12/12 gsettings 读值比对通过（含 dash-to-dock）；提交前防写穿断言如实红（未提交的新模板），提交后 verify --quick 仅剩 Chrome 1 项 FAIL（待 root 交接）
 - [x] CI：validate（run 40014389588）与 fresh-container 双架构（run 40014416129）全绿——容器无 gsettings，桌面应用域整域 SKIP，验证了门禁设计
+- 追加（同日）：ibus-libpinyin 进 desktop-apps + 输入源声明进 gsettings（中文输入保底，ADR-0005 补记）；flameshot 出局（GNOME 自带截图 UI，判据同 WDC）；本机软件审计归档（DGX 出厂 2379 包 + snap，remmina/gnome-tweaks 已预装故暂不入清单）
