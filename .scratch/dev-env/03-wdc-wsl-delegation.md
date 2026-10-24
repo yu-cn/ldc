@@ -1,5 +1,6 @@
 # 工单 03 — WDC 侧 WSL 阶段委托 LDC（ADR-0007 落地）
 
+> 2026-10-24 已同步至 WDC 仓库工单流：.scratch/dev-env/issues/32-wsl-stage-delegate-to-ldc.md（commit 8b204c8，https://github.com/yu-cn/wdc/blob/main/.scratch/dev-env/issues/32-wsl-stage-delegate-to-ldc.md ）——以 WDC 侧 32 号为实施主本，本文件为其 LDC 侧镜像。
 > 状态：规格已定稿，**待 WDC 仓库侧实施**（本工单在 LDC 仓库流转，实施于 WDC）。前置：LDC 发布到 github.com/yu-cn/ldc。
 
 ## 目标形态
