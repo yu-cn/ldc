@@ -13,10 +13,10 @@
 
 ## 验收
 
-- [ ] validate 全绿（含 sha 行格式检查）
-- [ ] media-doc 本机实装（sudo 交接真实走可选组分支）
-- [ ] plan 首跑 0 将变更（本机全收敛态投影）
-- [ ] 推送后 CI：validate 绿 + 冒烟双腿绿——amd64 腿全新容器全量下载 starship/lazygit，sha256 校验路径首获 CI 覆盖（arm64 腿同理）
+- [x] validate 全绿（含 sha 行格式检查；本地与 CI run 40108379100 双过）
+- [x] media-doc 本机实装（sudo 交接真实走可选组分支）
+- [x] plan 首跑 0 将变更（本机全收敛态投影）
+- [x] 推送后 CI：validate（40108379100）+ fresh-container 三腿全绿（40108395169：handoff / smoke-amd64 / smoke-arm64）——冒烟容器全新下载 starship/lazygit，sha256 校验路径首获双架构 CI 覆盖
 
 ## 实录（2026-10-24）
 
