@@ -12,7 +12,12 @@ manifest="$ROOT/configs/desktop.gsettings"
 entries=$(grep -vE '^[[:space:]]*(#|$)' "$manifest")
 [ -n "$entries" ] || { log "ERROR: $manifest 无有效条目"; exit 1; }
 
-# 会话探测（效果级证据，见 common.sh desktop_session_reachable）
+# 桌面栈门禁（与安装/断言面同口径，ADR-0008）：WSLg/headless/容器不是桌面机器，整域跳过；
+# 会话探测（效果级证据，见 common.sh desktop_session_reachable）只对真桌面机器有意义
+if ! desktop_stack_present; then
+    step '桌面域' SKIP '非桌面机器形态（headless/WSL/容器）'
+    exit 2
+fi
 if ! desktop_session_reachable; then
     step '桌面域' SKIP '无图形会话（gsettings 不可达）——登录 GNOME 桌面后重跑 bootstrap 应用'
     exit 2

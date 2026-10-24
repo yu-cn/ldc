@@ -68,8 +68,8 @@ if [ "${LDC_SKIP_DOCKER:-0}" = "1" ]; then
 else
     assert_that 'docker 在位' 'root 阶段安装（get.docker.com）' 'command -v docker'
 fi
-if ! have gsettings; then
-    step '桌面应用域' SKIP '无桌面栈（headless/WSL/容器）——ADR-0008'
+if ! desktop_stack_present; then
+    step '桌面应用域' SKIP '非桌面机器形态（headless/WSL/容器）——ADR-0008'
 else
     while read -r pkg; do
         assert_that "apt(桌面应用): $pkg" "root 阶段待交接：$(root_handoff_cmd)" "dpkg -s $pkg"
@@ -90,8 +90,8 @@ fi
 assert_that 'node 可用' 'node 由 vp 或机器自留地（如 nvm）提供——重跑 bootstrap' 'node_available'
 
 phase '5/5 · 桌面域'
-if ! have gsettings; then
-    step '桌面域' SKIP '无 gsettings（headless 机器，桌面域未启用）'
+if ! desktop_stack_present; then
+    step '桌面域' SKIP '非桌面机器形态（headless/WSL/容器）——ADR-0005'
 else
     assert_that 'JetBrainsMono NF 字体目录' '重跑 bootstrap（user 工具阶段）' \
         '[ -n "$(ls -A "$HOME/.local/share/fonts/JetBrainsMono-NF" 2>/dev/null)" ]'

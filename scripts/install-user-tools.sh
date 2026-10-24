@@ -112,8 +112,8 @@ else
 fi
 
 phase 'user 工具 · JetBrainsMono NF 字体'
-if ! have gsettings; then
-    step '字体' SKIP '无 gsettings（headless 域不装桌面字体）'
+if ! desktop_stack_present; then
+    step '字体' SKIP '非桌面机器形态（headless/WSL/容器）'
 else
     NF_VERSION="$(pin_of nerd-fonts-version)" || exit 1
     fontdir="$HOME/.local/share/fonts/JetBrainsMono-NF"
@@ -142,8 +142,8 @@ else
 fi
 
 phase 'user 工具 · VSCode 扩展（ADR-0008）'
-if ! have gsettings; then
-    step 'VSCode 扩展' SKIP '无桌面栈（headless/WSL/容器）'
+if ! desktop_stack_present; then
+    step 'VSCode 扩展' SKIP '非桌面机器形态（headless/WSL/容器）'
 elif ! have code; then
     step 'VSCode 扩展' INFO 'code 未装——root 阶段交接完成后重跑 bootstrap'
 else

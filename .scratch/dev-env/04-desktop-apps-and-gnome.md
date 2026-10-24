@@ -28,3 +28,4 @@
 - [x] verify 全量：12/12 gsettings 读值比对通过（含 dash-to-dock）；提交前防写穿断言如实红（未提交的新模板），提交后 verify --quick 仅剩 Chrome 1 项 FAIL（待 root 交接）
 - [x] CI：validate（run 40014389588）与 fresh-container 双架构（run 40014416129）全绿——容器无 gsettings，桌面应用域整域 SKIP，验证了门禁设计
 - 追加（同日）：ibus-libpinyin 进 desktop-apps + 输入源声明进 gsettings（中文输入保底，ADR-0005 补记）；flameshot 出局（GNOME 自带截图 UI，判据同 WDC）；本机软件审计归档（DGX 出厂 2379 包 + snap，remmina/gnome-tweaks 已预装故暂不入清单）
+- 追加（2026-10-24，WDC 工单32 迁移验收）：WSLg 机器 gsettings 可达，`have gsettings` 门禁误激活桌面域（code/chrome 装进 WSL、扩展 CLI 全败）——门禁收紧为 `desktop_stack_present`（gsettings 且非 WSL 内核），四处同口径；ADR-0008 补记裁定「WSL 不装 Linux 桌面软件，即便有 WSLg」

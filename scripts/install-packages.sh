@@ -71,8 +71,8 @@ else
 fi
 
 phase 'root · 桌面应用域（VSCode / Chrome；ADR-0008）'
-if ! have gsettings; then
-    step 'desktop-apps' SKIP '无桌面栈（headless/WSL/容器）'
+if ! desktop_stack_present; then
+    step 'desktop-apps' SKIP '非桌面机器形态（headless/WSL/容器）'
 else
     arch=$(dpkg --print-architecture)
     ok_repo=1

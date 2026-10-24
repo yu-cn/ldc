@@ -31,6 +31,19 @@ step() {
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+is_wsl() {
+    # WSL 形态判定（内核版本串含 microsoft——微软官方标记；/proc 只读文件，不依赖环境变量）。
+    # WSLg 会话让 gsettings 可达（ADR-0008 补记），「有 gsettings」从此不等价「桌面机器」——
+    # 桌面域门禁一律走 desktop_stack_present，勿裸用 have gsettings
+    grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null
+}
+
+desktop_stack_present() {
+    # 桌面栈门禁单一来源（ADR-0005/0008）：gsettings 在位 且 非 WSL。
+    # WSLg 不是桌面机器——Linux GUI 软件与字体由 Windows 侧承载；headless/CI 容器同样为假
+    have gsettings && ! is_wsl
+}
+
 ldc_repo() {
     # 仓库根：common.sh 恒位于 <repo>/scripts/lib/ 下，从自身位置推导（不受调用方 cwd 影响）
     printf '%s\n' "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -163,7 +176,7 @@ root_stage_complete() {
     if [ "${LDC_SKIP_DOCKER:-0}" != "1" ]; then
         have docker || missing=$((missing + 1))
     fi
-    if have gsettings; then
+    if desktop_stack_present; then
         while read -r pkg; do
             dpkg -s "$pkg" >/dev/null 2>&1 || missing=$((missing + 1))
         done < <(pkg_list desktop-apps.pkg)

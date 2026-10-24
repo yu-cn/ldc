@@ -89,11 +89,11 @@ link "$ROOT/ldc"                             "$HOME/.local/bin/ldc"
 # VSCode 配置（ADR-0008 桌面应用域；headless 机器不经 Remote 用到本机 VSCode，不链接）。
 # 注意：VSCode 会写穿 settings.json（改设置时直落模板）——防写穿断言 + triage 分流；
 # 首次启动须关闭 Settings Sync（账号级开关，云端会与仓库 dotfiles 打架，WDC 同款教训）
-if have gsettings; then
+if desktop_stack_present; then
     link "$ROOT/dotfiles/linux/vscode-settings.json"   "$HOME/.config/Code/User/settings.json"
     link "$ROOT/dotfiles/linux/vscode-keybindings.json" "$HOME/.config/Code/User/keybindings.json"
 else
-    step 'vscode 配置链接' SKIP '无桌面栈（ADR-0008）'
+    step 'vscode 配置链接' SKIP '非桌面机器形态（ADR-0008）'
 fi
 
 phase 'dotfiles · 机器数据文件（gitidentity 占位 / gitconfig.local）'
