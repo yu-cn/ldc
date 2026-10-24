@@ -13,14 +13,20 @@
 
 ## 快速开始（新机器）
 
-前置：装好 git 与 curl（`sudo apt update && sudo apt install -y git curl`）。然后：
+零前置——一条命令（缺 git/curl 自动经 apt 安装，sudo 需密码的机器就地询问）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash
+```
+
+get.sh 是唯一的远程引导脚本：缺 git/curl 自动 apt 安装 → 定位或 clone 仓库（`~/.ldc` 指针有效则复用，缺省 clone 到 `~/ldc`）→ 直接进入 bootstrap 全流程。`curl | bash` 属于直接执行网络代码——介意可先[审阅 get.sh](scripts/get.sh)再粘贴。偏好手动管理的等价两行（git/curl 需自备，`sudo apt install -y git curl`）：
 
 ```bash
 git clone https://github.com/yu-cn/ldc.git ldc && cd ldc
 bash bootstrap.sh
 ```
 
-fork 改造成自己环境的用户把 clone 地址换成你的仓库即可——`ldc sync` 跟随你 clone 的远端；直接使用者保持上面的地址，`ldc sync` 一键跟进上游演进。
+fork 改造成自己环境的用户把手动路径的 clone 地址换成你的仓库即可（get.sh 写死上游地址，fork 用户走手动路径或自行改地址）——`ldc sync` 跟随你 clone 的远端；直接使用者保持上面的地址，`ldc sync` 一键跟进上游演进。
 
 七阶段：预检 → 无副作用校验 → root 阶段 → user 工具 → 桌面 → dotfiles → 汇总，全程日志落 `logs/bootstrap-<时间戳>.log`。重跑幂等：已就位的全部跳过。收敛完成后验收：`bash scripts/verify-machine.sh`（全绿即与声明一致）。
 
@@ -97,7 +103,7 @@ dotfiles/   dotfiles 层：linux / shared 两处，符号链接安装（旧文�
 
 ## 新开发机接入（机器对等，任意台可重复）
 
-1. 该机上 `git clone` 本仓库 → `bash bootstrap.sh` → 按提示完成 root 交接与身份填写
+1. 该机上跑「快速开始」一条命令（或手动 `git clone` 本仓库 → `bash bootstrap.sh`）→ 按提示完成 root 交接与身份填写
 2. 验收：`bash scripts/verify-machine.sh`（全绿即与声明一致）
 3. 机器改进直接 push `main`（pre-commit 钩子把关：shellcheck 已装则硬把关，未装警告放行、CI 兜底）；个性需求走 `~/.bashrc.local` 自留地，不进仓库
 
