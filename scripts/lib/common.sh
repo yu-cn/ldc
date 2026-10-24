@@ -167,7 +167,7 @@ git_identity_ok() {
 
 root_stage_complete() {
     # root 阶段完成度（只读，供 ldc status / 汇总）：两清单全装 + gh 在位 + docker 在位
-    # + 桌面应用清单（仅 gsettings 机器——安装面与断言面同口径，ADR-0008）
+    # + 桌面应用清单（仅桌面栈机器 desktop_stack_present——安装面与断言面同口径，ADR-0008/0009）
     local pkg missing=0
     while read -r pkg; do
         dpkg -s "$pkg" >/dev/null 2>&1 || missing=$((missing + 1))
