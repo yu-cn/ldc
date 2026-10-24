@@ -14,3 +14,10 @@ LDC 与 [WDC](https://github.com/yu-cn/wdc) 是同一主人的关联项目（本
 5. 验收：WDC 的 WSL 断言组替换为对 `verify-machine.sh --quick` 的委托调用；WSL 特有残留（默认 shell=bash 的 chsh 等）随委托迁入 LDC。
 
 **演进统筹规则**：Linux 侧 shell/git/提示符模板的主作者位归 LDC（WDC 的 wsl 拷贝冻结至退役）；`configs/vp-version` 两仓库保持同值，升级同日双改、各自记账；WDC 的 upstream-ledger 与 LDC 的 .scratch 工单互引重大决策。拒绝的替代：抽第三个共享仓库供两方消费（为单人双仓库引入包管理复杂度，升级 vp 要跨三处）；保持双实现靠约定同步（正是要消灭的漂移源）；LDC 吞并 WDC 成单仓库双平台（ADR-0001 已否：验证面翻倍）。
+
+**对等原则**（补记 2026-10-25，主人明确）：LDC 与 WDC 是**对等项目**——按平台划界（WDC 主管 Windows 侧，LDC 主管 Linux 侧含 WSL Ubuntu），各自完整生命周期与治理对称；唯一交集是 WDC 的 WSL 域调用 LDC，属**辖区移交而非隶属**。要点：
+
+- 「谁调用谁」由机器入口在哪决定（Windows 机器入口在 WDC），与项目地位无关；纯 Linux 机器上 WDC 不在场，LDC 独立完成全程。
+- 该边单向（WDC→LDC）：Ubuntu 收敛按单一来源原则只在 LDC——对等指地位与治理对称，不是调用对称。
+- 主作者位澄清：dotfiles/linux 与 dev-standard 的「主作者位在 LDC」是单一来源防漂移机制，与项目地位无关。
+- 禁用「引擎 / 编排者 / 上下级」类隐喻；「委托契约」措辞只描述调用机制本身（哪个入口调哪个脚本），不隐含隶属。
