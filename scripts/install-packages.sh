@@ -132,6 +132,46 @@ if [ -n "${SUDO_USER:-}" ] && [ "${LDC_SKIP_DOCKER:-0}" != "1" ]; then
     fi
 fi
 
+phase 'root · Docker daemon 配置（受保护合并，ADR-0009）'
+# 通用核心键（日志轮转 + live-restore）经 jq 递归合并进 daemon.json：声明叶键胜出、
+# 机器自有键（镜像加速/data-root/NVIDIA 等）原样保留；绝不自动重启 docker（重启杀在跑容器）——
+# live-restore 生效后的重启本就不再杀容器，重启时机留给机主
+if [ "${LDC_SKIP_DOCKER:-0}" = "1" ]; then
+    step 'daemon 配置' SKIP 'LDC_SKIP_DOCKER=1'
+elif ! have docker; then
+    step 'daemon 配置' SKIP 'docker 不在位'
+else
+    declared="$ROOT/configs/docker-daemon.json"
+    target=/etc/docker/daemon.json
+    if [ ! -f "$target" ]; then
+        mkdir -p /etc/docker
+        if install -m 0644 "$declared" "$target"; then
+            step 'daemon.json' CHANGED '已按声明创建（下次 systemctl restart docker 生效；本次重启 live-restore 尚未生效，留意在跑容器）'
+        else
+            step 'daemon.json' FAIL '创建失败'
+            fail=$((fail + 1))
+        fi
+    elif ! jq empty "$target" >/dev/null 2>&1; then
+        step 'daemon.json' FAIL '现有文件为非法 JSON，跳过合并（人工处置）'
+        fail=$((fail + 1))
+    elif docker_daemon_declared_ok; then
+        step 'daemon.json' SKIP '声明键全部在位'
+    else
+        merged=$(jq -s '.[0] * .[1]' "$target" "$declared") || fail=$((fail + 1))
+        if [ "$fail" -eq 0 ] \
+           && { [ ! -e "$target.bak" ] && cp "$target" "$target.bak"; true; } \
+           && printf '%s\n' "$merged" > "$target.tmp" \
+           && mv "$target.tmp" "$target" \
+           && chmod 0644 "$target" \
+           && docker_daemon_declared_ok; then
+            step 'daemon.json' CHANGED '已合并声明键（机器自有键保留，原件备份 .bak；下次 systemctl restart docker 生效）'
+        elif [ "$fail" -eq 0 ]; then
+            step 'daemon.json' FAIL '合并失败'
+            fail=$((fail + 1))
+        fi
+    fi
+fi
+
 phase 'root · 汇总'
 if [ "$fail" -eq 0 ]; then
     step 'root 阶段' OK '全部就位'

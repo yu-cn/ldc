@@ -67,6 +67,9 @@ if [ "${LDC_SKIP_DOCKER:-0}" = "1" ]; then
     step 'docker 在位' SKIP 'LDC_SKIP_DOCKER=1'
 else
     assert_that 'docker 在位' 'root 阶段安装（get.docker.com）' 'command -v docker'
+    assert_that 'docker daemon 声明键在位（日志轮转 + live-restore）' \
+        'root 阶段受保护合并：sudo bash scripts/install-packages.sh' \
+        'have docker && docker_daemon_declared_ok'
 fi
 if ! desktop_stack_present; then
     step '桌面应用域' SKIP '非桌面机器形态（headless/WSL/容器）——ADR-0008'

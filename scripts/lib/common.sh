@@ -175,6 +175,10 @@ root_stage_complete() {
     have gh || missing=$((missing + 1))
     if [ "${LDC_SKIP_DOCKER:-0}" != "1" ]; then
         have docker || missing=$((missing + 1))
+        # daemon 声明键同属 root 阶段安装面（ADR-0009；docker 在位才要求）
+        if have docker && ! docker_daemon_declared_ok; then
+            missing=$((missing + 1))
+        fi
     fi
     if desktop_stack_present; then
         while read -r pkg; do
@@ -228,4 +232,13 @@ latest_bootstrap_log() {
     latest=$(ls -1t "$(ldc_repo)/logs"/bootstrap-*.log 2>/dev/null | head -n1)
     [ -n "$latest" ] || return 1
     printf '%s\n' "$latest"
+}
+
+docker_daemon_declared_ok() {
+    # daemon.json 是否已含全部声明键（ADR-0009 受保护合并的断言口径）：
+    # target * declared == target ⟺ 声明的所有叶键在 target 中已同值（递归子集）
+    local declared f=/etc/docker/daemon.json
+    declared="$(ldc_repo)/configs/docker-daemon.json"
+    [ -f "$f" ] || return 1
+    jq -s -e '.[0] * .[1] == .[0]' "$f" "$declared" >/dev/null 2>&1
 }

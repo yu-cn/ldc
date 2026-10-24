@@ -9,7 +9,7 @@
 ## 一条命令得到什么
 
 **系统**（root 阶段，[base-linux](configs/base-linux.pkg) + [cli-tools](configs/cli-tools.pkg)）
-build-essential · git · curl/wget · jq · fzf / ripgrep / bat / fd / zoxide / eza / git-delta / tree / htop / shellcheck · gh（官方 apt 源）· Docker Engine（已装则跳过，默认用户入 docker 组）
+build-essential · git · curl/wget · jq · fzf / ripgrep / bat / fd / zoxide / eza / git-delta / tree / htop / shellcheck · gh（官方 apt 源）· Docker Engine（已装则跳过，默认用户入 docker 组；daemon.json [受保护合并](configs/docker-daemon.json)声明日志轮转与 live-restore——机器自有键保留，不自动重启，[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）
 
 **语言运行时**（user 阶段）
 Node 归 **vp**（[版本钉 configs](configs/vp-version)，默认跟随 LTS）、Python 归 **uv**——与 WDC 两侧同工具同习惯；机器已有的 nvm 等属自留地，共存不卸载（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）

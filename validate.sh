@@ -142,6 +142,24 @@ else
     fail=$((fail + 1))
 fi
 rm -f "$fx"
+# docker daemon 声明文件：合法 JSON（受保护合并的输入，ADR-0009）
+if jq empty "$ROOT/configs/docker-daemon.json" >/dev/null 2>&1; then
+    step 'configs/docker-daemon.json' OK '合法 JSON'
+else
+    step 'configs/docker-daemon.json' FAIL '非法 JSON'
+    fail=$((fail + 1))
+fi
+# 受保护合并语义自测：声明叶键胜出（max-file 覆盖）、机器自有键保留（mirrors/labels）
+dj_ex='{"registry-mirrors":["https://m.example"],"log-opts":{"max-file":"5","labels":"x"}}'
+dj_dec='{"log-driver":"json-file","log-opts":{"max-size":"50m","max-file":"3"},"live-restore":true}'
+dj_want='{"registry-mirrors":["https://m.example"],"log-driver":"json-file","log-opts":{"max-size":"50m","max-file":"3","labels":"x"},"live-restore":true}'
+if [ "$(printf '%s' "$dj_ex" | jq -cS .)" != "$(printf '%s' "$dj_dec" | jq -cS .)" ] \
+   && [ "$(jq -n -cS --argjson a "$dj_ex" --argjson b "$dj_dec" '$a * $b')" = "$(printf '%s' "$dj_want" | jq -cS .)" ]; then
+    step 'daemon 合并自测（受保护合并）' OK '声明叶胜出 · 机器键保留'
+else
+    step 'daemon 合并自测（受保护合并）' FAIL '合并语义不符预期'
+    fail=$((fail + 1))
+fi
 # ldc 错命令建议（集成）：建议逻辑在仓库定位之前，无需 ~/.ldc 指针
 bad_out=$(bash "$ROOT/ldc" syncz 2>&1)
 bad_rc=$?

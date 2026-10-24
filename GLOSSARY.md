@@ -13,6 +13,7 @@
 | **`.gitconfig.local`** | 机器自留地的 git 段（与 .bashrc.local 同构）：gh 凭据助手等按机配置，模板经 `[include]` 引用 |
 | **钉子** | 版本钉子：`configs/*-version` 单一来源，升级只改这一个文件（vp / lazygit / starship / nerd-fonts，漂移自动收敛） |
 | **架构映射** | `ldc_arch()`：全仓库唯一的架构判断点，`uname -m` → GitHub 资产段（amd64/arm64）；其它架构拒绝（ADR-0006） |
+| **受保护合并** | daemon.json 的声明式管理方式：jq 递归合并，声明叶键胜出、机器自有键保留，绝不整文件接管（ADR-0009） |
 | **root 阶段** | 需提权的系统层：apt 清单核销 + gh 官方源 + Docker（`install-packages.sh`，可独立 sudo） |
 | **user 阶段** | 免提权的用户层：uv / vp / starship / lazygit / 字体 + dotfiles |
 | **交接命令** | sudo 需密码时 bootstrap 末尾打印的单条手工命令（ADR-0004）；exit 2 = 有待办 |
