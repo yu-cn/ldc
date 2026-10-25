@@ -6,11 +6,13 @@
 
 ## [Unreleased]
 
+## [0.7.0] – 2026-10-26
+
 ### Added
 - `ldc audit` 清单准入对账：自装未声明（对全部 `.pkg` 并集的差集，喂清单准入）与已声明未装（收敛待办）两个方向，只读恒 exit 0
 - 可选包组 `etckeeper`：`/etc` 纳入 git 审计——apt 事务前后与每日自动 commit（systemd timer + apt 钩子），root 写入面（daemon.json 合并等）自此有机器侧留痕
 - 漂移方向判定（ADR-0015 补注）：渲染账本 `~/.local/state/ldc/rendered.sha256` 判定 template-update / machine / both / unknown 四方向——纯模板更新直接重渲染、不再产生 `.bak`
-- CHANGELOG（本文件）与终端演示 `docs/demo.cast`
+- CHANGELOG（本文件，Keep a Changelog 格式）与 README 首屏终端速览演示（`docs/demo.cast` + agg 转 GIF 嵌播）
 
 ## [0.6.0] – 2026-10-25
 
@@ -55,7 +57,8 @@
 ### Added
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
-[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/yu-cn/ldc/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/yu-cn/ldc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/yu-cn/ldc/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/yu-cn/ldc/compare/v0.3.0...v0.4.0
