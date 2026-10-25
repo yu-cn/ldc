@@ -5,7 +5,7 @@
 #   ① dotfiles 符号链接 + 模板与 HEAD 一致（防写穿；无 commit 时降级 INFO）+ hooksPath
 #   ② gitidentity 存在且非占位（未填 = FAIL 是设计内护栏；LDC_SMOKE=1 容器冒烟降为存在性检查）
 #   ③ 包清单核销（dpkg -s 逐项；即 root 阶段完成度）
-#   ④ 语言栈（uv 在位、vp = 钉子、node 可用——不断言 node 归属，ADR-0003 nvm 共存）
+#   ④ 语言栈与工具钉子（uv 在位、vp/starship/lazygit = 钉子、node 可用——不断言 node 归属，ADR-0003 nvm 共存）
 #   ⑤ 桌面域（gsettings 读值比对；无会话 SKIP）
 # 用法：bash scripts/verify-machine.sh [--quick]   --quick 跳过 gsettings 读值比对（秒级）
 set -uo pipefail
@@ -25,6 +25,18 @@ assert_that() {
         step "$name" OK
     else
         step "$name" FAIL "$hint"
+        FAILS=$((FAILS + 1))
+    fi
+}
+
+# assert_pin <名称> <钉子文件> <二进制>——断言与 install-user-tools 的收敛语义同宽：漂移→重跑 bootstrap 即收敛
+assert_pin() {
+    local name=$1 pinfile=$2 bin=$3 pin
+    pin="$(pin_of "$pinfile")" || exit 1
+    if [ -x "$bin" ] && version_matches "$("$bin" --version 2>/dev/null)" "$pin"; then
+        step "$name = 钉子（$pin）" OK
+    else
+        step "$name = 钉子（$pin）" FAIL '重跑 bootstrap（user 工具阶段）'
         FAILS=$((FAILS + 1))
     fi
 }
@@ -82,14 +94,9 @@ fi
 phase '4/5 · 语言栈与架构'
 assert_that '架构受支持（amd64/arm64）' 'LDC 仅支持 amd64/arm64（ADR-0006）' 'ldc_arch >/dev/null'
 assert_that 'uv 就位' '重跑 bootstrap（user 工具阶段）' '[ -x "$HOME/.local/bin/uv" ] || command -v uv'
-VP_PIN="$(pin_of vp-version)" || exit 1
-vp_bin="$(vp_bin_path || true)"
-if [ -n "$vp_bin" ] && version_matches "$("$vp_bin" --version 2>/dev/null)" "$VP_PIN"; then
-    step "vp = 钉子（$VP_PIN）" OK
-else
-    step "vp = 钉子（$VP_PIN）" FAIL '重跑 bootstrap（user 工具阶段）'
-    FAILS=$((FAILS + 1))
-fi
+assert_pin vp vp-version "$(vp_bin_path || true)"
+assert_pin starship starship-version "$HOME/.local/bin/starship"
+assert_pin lazygit lazygit-version "$HOME/.local/bin/lazygit"
 assert_that 'node 可用' 'node 由 vp 或机器自留地（如 nvm）提供——重跑 bootstrap' 'node_available'
 
 phase '5/5 · 桌面域'
