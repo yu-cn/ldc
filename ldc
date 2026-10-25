@@ -161,6 +161,18 @@ case $cmd in
         else
             step '最近 bootstrap' INFO 'logs/ 尚无日志'
         fi
+        # 上游 watch 提醒（ADR-0014）：距上次 check-upstream 超 30 天提示补课——只提醒不巡检（对齐 wdc）
+        ledger="$repo/docs/upstream-ledger.md"
+        if [ -f "$ledger" ] \
+           && last=$(grep -oE '\| 20[0-9]{2}-[0-9]{2}-[0-9]{2} ' "$ledger" | tr -d '| ' | sort -r | head -n 1) \
+           && [ -n "$last" ]; then
+            days=$(( ($(date +%s) - $(date -d "$last" +%s)) / 86400 ))
+            if [ "$days" -gt 30 ]; then
+                step '上游检查' INFO "距上次 $days 天——bash scripts/check-upstream.sh 并记账 docs/upstream-ledger.md"
+            else
+                step '上游检查' OK "距上次 $days 天"
+            fi
+        fi
         ;;
 
     sync)
@@ -189,6 +201,10 @@ case $cmd in
         if [ "$rc" -eq 1 ]; then
             step 'bootstrap' FAIL '未全绿——最近日志尾部（完整见 logs/）'
             log_file=$(latest_bootstrap_log) && tail -n 30 "$log_file"
+            # 运行锁占用（ADR-0013）单列提示：判定行在日志即实锤；退出码保持 1（红线 7 词表内）
+            if [ -n "${log_file:-}" ] && grep -q '已有一次收敛在跑' "$log_file" 2>/dev/null; then
+                step '提示' INFO '本次失败因运行锁占用——另一收敛会话结束后再 ldc sync'
+            fi
             exit 1
         fi
         if [ "$rc" -eq 2 ]; then

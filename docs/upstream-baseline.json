@@ -1,0 +1,21 @@
+{
+  "head": "fb564611cfe461c6ec83ddd33f9844f11570a321",
+  "date": "2026-10-25T08:31:02Z",
+  "apt": [
+    "bat",
+    "btop",
+    "build-essential",
+    "ca-certificates",
+    "curl",
+    "eza",
+    "fd-find",
+    "fzf",
+    "git",
+    "jq",
+    "pkg-config",
+    "ripgrep",
+    "tmux",
+    "unzip",
+    "wget"
+  ]
+}
