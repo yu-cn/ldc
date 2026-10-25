@@ -140,19 +140,27 @@ vp_bin_path() {
     return 1
 }
 
+vp_env_script() {
+    # vp env 脚本路径探测（安装器布局随版本变动，逐个尝试——对齐 WDC 工单12）：
+    # 首个在位者输出路径并返回 0；全缺返回 1。install-user-tools 据此写机器事实文件 env.sh（ADR-0015）
+    local d
+    for d in "$HOME/.config/vite-plus/env" "$HOME/.local/share/vite-plus/env.sh" \
+             "$HOME/.local/share/vite-plus/env" "$HOME/.vite-plus/env"; do
+        [ -f "$d" ] && { printf '%s\n' "$d"; return 0; }
+    done
+    return 1
+}
+
 node_available() {
-    # node 可用性（效果级，ADR-0003 nvm/vp 共存）：PATH 直见，或经任一 vp env 脚本激活后可见
-    # （安装器的 shim 布局随版本在 bin/ 与 fallback-bin/ 间变动，不写死），或 nvm 目录在位
+    # node 可用性（效果级，ADR-0003 nvm/vp 共存）：PATH 直见，或经 vp env 脚本激活后可见
+    # （布局探测单一来源 vp_env_script），或 nvm 目录在位
     command -v node >/dev/null 2>&1 && return 0
     local e
-    for e in "$HOME/.config/vite-plus/env" "$HOME/.local/share/vite-plus/env.sh" \
-             "$HOME/.local/share/vite-plus/env" "$HOME/.vite-plus/env"; do
-        if [ -f "$e" ]; then
-            # shellcheck disable=SC1090
-            . "$e" >/dev/null 2>&1 || true
-            command -v node >/dev/null 2>&1 && return 0
-        fi
-    done
+    if e=$(vp_env_script); then
+        # shellcheck disable=SC1090
+        . "$e" >/dev/null 2>&1 || true
+        command -v node >/dev/null 2>&1 && return 0
+    fi
     ls "$HOME"/.nvm/versions/node/*/bin/node >/dev/null 2>&1
 }
 
@@ -174,6 +182,52 @@ bashrc_local_extract() {
         /^export NVM_DIR=/ { seg(); nvm = 3 }
         nvm > 0 { print; nvm--; next }
     ' "$1"
+}
+
+# --- dotfiles 渲染模型（ADR-0015）：落点映射与状态判定（安装/断言/预演/分流/快照五方共读） ---
+
+dotfiles_map() {
+    # 落点映射单一来源：显示名|仓库模板相对路径|机器落点（$HOME 起）|生效门|模式
+    # 门=always 恒适用 / desktop 仅桌面栈机器（ADR-0008）；模式=render 渲染拷贝 / link 符号链接（仅 CLI 入口）
+    # 新增 dotfile 只改这里，安装面与断言面自动同步（对齐 WDC dotfiles-map.ps1）
+    cat <<'MAP'
+~/.bashrc|dotfiles/linux/bashrc|.bashrc|always|render
+~/.gitconfig|dotfiles/linux/gitconfig|.gitconfig|always|render
+~/.config/starship.toml|dotfiles/shared/starship.toml|.config/starship.toml|always|render
+~/.local/bin/ldc|ldc|.local/bin/ldc|always|link
+VSCode settings.json|dotfiles/linux/vscode-settings.json|.config/Code/User/settings.json|desktop|render
+VSCode keybindings.json|dotfiles/linux/vscode-keybindings.json|.config/Code/User/keybindings.json|desktop|render
+MAP
+}
+
+dotfiles_map_entries() {
+    # 按机器形态过滤后的落点映射（调用方逐行 IFS='|' read -r 名 模板 落点 门 模式）
+    local name tmpl target gate mode
+    while IFS='|' read -r name tmpl target gate mode; do
+        case $gate in
+            always) printf '%s|%s|%s|%s|%s\n' "$name" "$tmpl" "$target" "$gate" "$mode" ;;
+            desktop) desktop_stack_present && printf '%s|%s|%s|%s|%s\n' "$name" "$tmpl" "$target" "$gate" "$mode" ;;
+        esac
+    done < <(dotfiles_map)
+}
+
+dotfiles_entry_state() {
+    # dotfiles_entry_state <模板绝对路径> <落点绝对路径> <mode> —— 落点状态：ok|absent|drift
+    # render：实体文件与模板 cmp 一致=ok / 缺失=absent / 符号链接残形（旧安装形态、外来链接）=drift / 内容不符=drift
+    # link：指向模板的符号链接=ok / 其余已存在=drift / 缺失=absent
+    local src=$1 dst=$2 mode=$3
+    if [ "$mode" = link ]; then
+        if [ -L "$dst" ]; then
+            [ "$(readlink "$dst")" = "$src" ] && printf 'ok\n' || printf 'drift\n'
+            return 0
+        fi
+        [ -e "$dst" ] && printf 'drift\n' || printf 'absent\n'
+        return 0
+    fi
+    [ -L "$dst" ] && { printf 'drift\n'; return 0; }
+    [ -f "$dst" ] || { printf 'absent\n'; return 0; }
+    cmp -s "$dst" "$src" && printf 'ok\n' || printf 'drift\n'
+    return 0
 }
 
 git_identity_ok() {

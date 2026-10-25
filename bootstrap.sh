@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2088  # 标签文案中的 ~/ 是显示约定不参与展开；真实路径展开一律用 $HOME
 # bootstrap.sh — LDC 开发环境唯一入口（GLOSSARY: bootstrap）
-# 阶段：预检 → 无副作用校验 → root 阶段(或交接) → user 工具 → 桌面 → dotfiles → 汇总
+# 阶段：预检 → 无副作用校验 → root 阶段(或交接) → user 工具 → 桌面 → dotfiles(渲染拷贝) → 汇总
 # 退出码：0 = 全部就绪；1 = 有 FAIL；2 = 有待办手工步骤（root 交接 / 身份未填 / 桌面待登录重跑）
 # 环境：LDC_SKIP_DOCKER=1 跳过 docker 域（CI 冒烟）；全程日志 tee 到 logs/bootstrap-<时间戳>.log
 set -uo pipefail
@@ -106,7 +106,7 @@ main() {
         *) step '桌面域' FAIL "退出码 $rc"; fails=$((fails + 1)) ;;
     esac
 
-    phase '6/7 · dotfiles（符号链接 + .bashrc.local + 身份占位）'
+    phase '6/7 · dotfiles（渲染拷贝 + .bashrc.local + 身份占位）'
     run_stage 'dotfiles' "$ROOT/scripts/install-dotfiles.sh" || fails=$((fails + 1))
 
     phase '7/7 · 汇总'

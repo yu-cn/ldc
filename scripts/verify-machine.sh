@@ -2,10 +2,10 @@
 # shellcheck disable=SC2088  # 标签文案中的 ~/ 是显示约定不参与展开；真实路径展开一律用 $HOME
 # verify-machine.sh — 机器状态断言（只读，不改变任何状态）；任一 FAIL → exit 1
 # 五组断言（对齐 WDC verify-machine.ps1 风格）：
-#   ① dotfiles 符号链接 + 模板与 HEAD 一致（防写穿；无 commit 时降级 INFO）+ hooksPath
+#   ① dotfiles 落点与模板一致（ADR-0015 内容断言，断效果不断实现；落点映射见 common.sh dotfiles_map）+ hooksPath
 #   ② gitidentity 存在且非占位（未填 = FAIL 是设计内护栏；LDC_SMOKE=1 容器冒烟降为存在性检查）
 #   ③ 包清单核销（dpkg -s 逐项；即 root 阶段完成度）
-#   ④ 语言栈与工具钉子（uv 在位、vp/starship/lazygit = 钉子、node 可用——不断言 node 归属，ADR-0003 nvm 共存）
+#   ④ 语言栈与工具钉子（uv 在位、vp/starship/lazygit = 钉子、node 可用、env.sh 事实文件在位）
 #   ⑤ 桌面域（gsettings 读值比对；无会话 SKIP）
 # 用法：bash scripts/verify-machine.sh [--quick]   --quick 跳过 gsettings 读值比对（秒级）
 set -uo pipefail
@@ -41,22 +41,21 @@ assert_pin() {
     fi
 }
 
-phase '1/5 · dotfiles 符号链接与接线'
-assert_that '~/.bashrc → 仓库模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
-    '[ "$(readlink "$HOME/.bashrc")" = "$ROOT/dotfiles/linux/bashrc" ]'
-assert_that '~/.gitconfig → 仓库模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
-    '[ "$(readlink "$HOME/.gitconfig")" = "$ROOT/dotfiles/linux/gitconfig" ]'
-assert_that '~/.config/starship.toml → 仓库模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
-    '[ "$(readlink "$HOME/.config/starship.toml")" = "$ROOT/dotfiles/shared/starship.toml" ]'
-assert_that '~/.local/bin/ldc → 仓库 CLI（任意目录裸命令）' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
-    '[ "$(readlink "$HOME/.local/bin/ldc")" = "$ROOT/ldc" ]'
-# dotfiles 落点是符号链接，机器侧工具写穿会直接污染仓库——验收须与 HEAD 一致；无 commit 时降级 INFO
-if git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
-    assert_that 'dotfiles 与 HEAD 一致（防写穿）' '写穿漂移——bash scripts/triage-dotfiles-drift.sh 逐文件分流' \
-        '[ -z "$(git -C "$ROOT" status --porcelain -- dotfiles)" ]'
-else
-    step 'dotfiles 与 HEAD 一致（防写穿）' INFO '仓库尚无 commit——跳过比对（首次 commit 后生效）'
-fi
+phase '1/5 · dotfiles 落点与接线（ADR-0015 内容断言）'
+assert_dotfiles() {
+    # assert_dotfiles <显示名> <模板绝对路径> <落点绝对路径> <mode>——落点状态经 dotfiles_entry_state 判定
+    local name=$1 src=$2 dst=$3 mode=$4 state
+    state=$(dotfiles_entry_state "$src" "$dst" "$mode")
+    if [ "$state" = ok ]; then
+        step "$name" OK
+    else
+        step "$name" FAIL '落点与模板不一致——机器侧改动先 ldc triage 分流，再重跑 bash bootstrap.sh（dotfiles 阶段）'
+        FAILS=$((FAILS + 1))
+    fi
+}
+while IFS='|' read -r name tmpl target _gate mode; do
+    assert_dotfiles "$name" "$ROOT/$tmpl" "$HOME/$target" "$mode"
+done < <(dotfiles_map_entries)
 assert_that 'pre-commit 钩子已接线' 'git config core.hooksPath .githooks（或重跑 bootstrap）' \
     '[ "$(git -C "$ROOT" config core.hooksPath)" = ".githooks" ]'
 
@@ -98,6 +97,8 @@ assert_pin vp vp-version "$(vp_bin_path || true)"
 assert_pin starship starship-version "$HOME/.local/bin/starship"
 assert_pin lazygit lazygit-version "$HOME/.local/bin/lazygit"
 assert_that 'node 可用' 'node 由 vp 或机器自留地（如 nvm）提供——重跑 bootstrap' 'node_available'
+assert_that '~/.config/ldc/env.sh 在位（工具布局事实，ADR-0015）' '重跑 bash bootstrap.sh（user 工具阶段）' \
+    '[ -f "$HOME/.config/ldc/env.sh" ]'
 
 phase '5/5 · 桌面域'
 if ! desktop_stack_present; then
@@ -105,11 +106,8 @@ if ! desktop_stack_present; then
 else
     assert_that 'JetBrainsMono NF 字体目录' '重跑 bootstrap（user 工具阶段）' \
         '[ -n "$(ls -A "$HOME/.local/share/fonts/JetBrainsMono-NF" 2>/dev/null)" ]'
-    # VSCode 配置链接与扩展（ADR-0008；自装扩展不在清单不核销——ADR-0003）
-    assert_that '~/.config/Code/User/settings.json → 模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
-        '[ "$(readlink "$HOME/.config/Code/User/settings.json")" = "$ROOT/dotfiles/linux/vscode-settings.json" ]'
-    assert_that '~/.config/Code/User/keybindings.json → 模板' '重跑 bash bootstrap.sh（dotfiles 阶段）' \
-        '[ "$(readlink "$HOME/.config/Code/User/keybindings.json")" = "$ROOT/dotfiles/linux/vscode-keybindings.json" ]'
+    # VSCode 配置落点已由 phase 1 的 dotfiles_map 内容断言覆盖（ADR-0015）；这里只管扩展
+    # （自装扩展不在清单不核销——ADR-0003）
     if have code; then
         assert_that 'VSCode 扩展清单在位' '重跑 bootstrap（user 工具阶段）' \
             '[ -z "$(comm -23 <(pkg_list vscode-extensions.txt | sort) <(code --list-extensions 2>/dev/null | sort))" ]'

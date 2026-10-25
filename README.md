@@ -9,7 +9,7 @@
 
 **支持的机器形态**：Ubuntu/Debian · **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
 
-**安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· dotfiles 落点符号链接、旧文件备份 `*.bak` · Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
+**安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· dotfiles 落点为模板渲染拷贝——仓库缺席不影响已收敛机器，覆盖前备份 `*.bak`（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）· Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
 
 ## 快速开始（新机器）
 
@@ -69,8 +69,8 @@ starship 提示符 · lazygit · JetBrainsMono NF 字体（仅桌面栈机器）
 **桌面应用域**（桌面栈机器启用，[ADR-0008](docs/adr/0008-desktop-apps-domain.md)）
 VSCode（packages.microsoft.com 源）+ [30 个扩展](configs/vscode-extensions.txt)（Python/Jupyter 全家、Remote-SSH/容器、中文语言包等）+ Chrome（dl.google.com 源）+ ibus-rime——双架构对称（两家厂商源均有 arm64/amd64）；扩展清单与 WDC 同名同格式，自装扩展不核销
 
-**dotfiles**（[dotfiles/](dotfiles/)，符号链接安装，旧文件备份 `*.bak`）
-bashrc（历史/别名/fzf/zoxide/starship + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml · VSCode settings/keybindings（桌面应用域机器）
+**dotfiles**（[dotfiles/](dotfiles/)，渲染拷贝安装（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)），覆盖前备份 `*.bak`）
+bashrc（历史/别名/fzf/zoxide/starship + 工具布局事实 [env.sh](scripts/install-user-tools.sh) + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml · VSCode settings/keybindings（桌面应用域机器）
 
 </details>
 
@@ -83,7 +83,7 @@ bashrc（历史/别名/fzf/zoxide/starship + 末尾 `.bashrc.local` 机器自留
 | `ldc` | 只读快照（裸命令默认，秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap |
 | `ldc plan` | 干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼 |
 | `ldc sync` | 日常一键同步（fetch → pull --ff-only → bootstrap → verify 全量） |
-| `ldc verify [--full]` / `ldc triage` / `ldc log` / `ldc help` | 机器断言（默认 --quick）/ dotfiles 写穿分流 / 最近日志尾部 / 帮助与版本 |
+| `ldc verify [--full]` / `ldc triage` / `ldc log` / `ldc help` | 机器断言（默认 --quick）/ dotfiles 落点漂移分流 / 最近日志尾部 / 帮助与版本 |
 | `bash bootstrap.sh` | 完整收敛（日常改了配置后重跑） |
 | `bash validate.sh` | 只做无副作用校验（bash -n + shellcheck + 清单格式） |
 | `bash scripts/verify-machine.sh [--quick]` | 机器断言的脚本直跑形态 |
@@ -93,7 +93,7 @@ bashrc（历史/别名/fzf/zoxide/starship + 末尾 `.bashrc.local` 机器自留
 ```
 configs/    声明式层：包清单（base-linux / cli-tools / 可选包组）· gsettings 清单 · 版本钉子
 scripts/    编排层：bootstrap 各阶段、CLI、断言、预演、漂移分流
-dotfiles/   dotfiles 层：linux / shared 两处，符号链接安装（旧文件备份 *.bak）
+dotfiles/   dotfiles 层：linux / shared 两处，渲染拷贝安装（覆盖前备份 *.bak，ADR-0015）
 ```
 
 - git 身份不入仓库：模板 include 每机本地的 `~/.gitidentity`

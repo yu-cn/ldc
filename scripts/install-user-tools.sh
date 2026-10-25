@@ -203,6 +203,35 @@ else
     fi
 fi
 
+phase 'user 工具 · 机器事实文件 env.sh（ADR-0015）'
+# bashrc 模板只 source 这一个文件：工具安装布局事实（vp env 脚本、fzf 键位示例路径）在安装期探测落盘，
+# 上游换布局只改本脚本与 common.sh 的 vp_env_script，模板不再追路径。每次收敛重写（事实随工具升级而变）。
+env_file="$HOME/.config/ldc/env.sh"
+vp_env="$(vp_env_script || true)"
+fzf_kb=/usr/share/doc/fzf/examples/key-bindings.bash
+fzf_cm=/usr/share/doc/fzf/examples/completion.bash
+mkdir -p "$HOME/.config/ldc"
+{
+    echo '# ~/.config/ldc/env.sh — 工具布局事实（install-user-tools 每次收敛重写；ADR-0015）'
+    echo '# bashrc 模板统一 source 本文件；机器私有偏好放 ~/.bashrc.local（后加载可覆盖）。'
+    if [ -n "$vp_env" ]; then
+        echo ''
+        echo '# vp（Vite+）Node 环境（安装期探测到的实际落位）'
+        printf '. %q\n' "$vp_env"
+    fi
+    if [ -f "$fzf_kb" ] || [ -f "$fzf_cm" ]; then
+        echo ''
+        echo '# fzf 键位绑定与补全（发行版包示例路径，存在才 source）'
+        if [ -f "$fzf_kb" ]; then printf '[ -f %s ] && . %s\n' "$fzf_kb" "$fzf_kb"; fi
+        if [ -f "$fzf_cm" ]; then printf '[ -f %s ] && . %s\n' "$fzf_cm" "$fzf_cm"; fi
+    fi
+} > "$env_file"
+if [ -n "$vp_env" ]; then
+    step 'env.sh' OK "$env_file（vp/fzf 布局事实已落盘）"
+else
+    step 'env.sh' OK "$env_file（vp 未探测到——仅注释骨架）"
+fi
+
 phase 'user 工具 · 汇总'
 if [ "$fail" -eq 0 ]; then
     step 'user 工具' OK '全部就位'

@@ -22,18 +22,22 @@ pstep() {
     esac
 }
 
-link_plan() {
-    # link_plan <仓库源> <落点> <显示名> —— install-dotfiles.sh link() 的只读投影
-    local src=$1 dst=$2 name=$3
-    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
-        pstep "$name" OK '链接已就位'
-    elif [ -e "$dst" ] && [ ! -L "$dst" ]; then
-        pstep "$name" PLAN "将接管：旧文件备份 $(basename "$dst").bak 后链接"
-    elif [ -L "$dst" ]; then
-        pstep "$name" PLAN "将重指：$(readlink "$dst") → $src"
-    else
-        pstep "$name" PLAN "将创建链接 → $src"
-    fi
+render_plan() {
+    # render_plan <显示名> <模板绝对路径> <落点绝对路径> <mode> —— install-dotfiles render()/link() 的只读投影
+    local name=$1 src=$2 dst=$3 mode=$4 state
+    state=$(dotfiles_entry_state "$src" "$dst" "$mode")
+    case $state in
+        ok)     pstep "$name" OK '已与模板一致' ;;
+        absent) pstep "$name" PLAN '将渲染 ← 模板' ;;
+        drift)
+            if [ "$mode" = render ] && [ -L "$dst" ]; then
+                pstep "$name" PLAN "将迁移：符号链接（→ $(readlink "$dst" 2>/dev/null || echo '死链')）改渲染拷贝（ADR-0015）"
+            elif [ "$mode" = render ]; then
+                pstep "$name" PLAN '将重渲染（当前落点内容先备份 .bak.N；机器侧改动可先 ldc triage 吸收进模板）'
+            else
+                pstep "$name" PLAN '将重指符号链接 → 仓库 CLI'
+            fi ;;
+    esac
 }
 
 phase '1/6 · 预检'
@@ -179,16 +183,10 @@ else
 fi
 
 phase '5/6 · dotfiles 与身份'
-link_plan "$ROOT/dotfiles/linux/bashrc"         "$HOME/.bashrc"                 '~/.bashrc'
-link_plan "$ROOT/dotfiles/linux/gitconfig"      "$HOME/.gitconfig"              '~/.gitconfig'
-link_plan "$ROOT/dotfiles/shared/starship.toml" "$HOME/.config/starship.toml"   '~/.config/starship.toml'
-link_plan "$ROOT/ldc"                           "$HOME/.local/bin/ldc"          '~/.local/bin/ldc'
-if desktop_stack_present; then
-    link_plan "$ROOT/dotfiles/linux/vscode-settings.json"   "$HOME/.config/Code/User/settings.json"   'VSCode settings.json'
-    link_plan "$ROOT/dotfiles/linux/vscode-keybindings.json" "$HOME/.config/Code/User/keybindings.json" 'VSCode keybindings.json'
-else
-    pstep 'VSCode 配置链接' SKIP '非桌面机器形态（ADR-0008）'
-fi
+while IFS='|' read -r name tmpl target _gate mode; do
+    render_plan "$name" "$ROOT/$tmpl" "$HOME/$target" "$mode"
+done < <(dotfiles_map_entries)
+desktop_stack_present || pstep 'VSCode 配置渲染' SKIP '非桌面机器形态（ADR-0008）'
 if [ -e "$HOME/.bashrc.local" ]; then
     pstep '.bashrc.local' OK '自留地在位（机主维护）'
 else

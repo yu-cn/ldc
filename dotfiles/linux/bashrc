@@ -1,4 +1,5 @@
 # ~/.bashrc — Linux 侧模板（LDC 仓库管理；以 WDC wsl/bashrc 为基础改造）
+# 本文件是模板：bootstrap 渲染拷贝到 ~/.bashrc（ADR-0015）——改习惯改这里，ldc sync 后生效。
 # 提示符 starship | 模糊搜索 fzf | 智能跳转 zoxide | ls→eza cat→bat grep→rg find→fd
 # 机器私有段放 ~/.bashrc.local（见文件末尾；ADR-0003 机器自留地）
 
@@ -29,10 +30,9 @@ case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH";; 
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 command -v uv >/dev/null 2>&1 && eval "$(uv generate-shell-completion bash)"
 command -v uvx >/dev/null 2>&1 && eval "$(uvx --generate-shell-completion bash)"
-# vp（Vite+，Node 托管；安装器生成的 env 脚本存在则启用——不同版本路径不同，逐个尝试）
-for _vp_env in "$HOME/.config/vite-plus/env" "$HOME/.local/share/vite-plus/env.sh" "$HOME/.local/share/vite-plus/env"; do
-    [ -f "$_vp_env" ] && . "$_vp_env" && break
-done
+# 工具布局事实（vp env / fzf 键位等，ADR-0015）：install-user-tools 安装期探测写入 ~/.config/ldc/env.sh——
+# 上游换布局只改安装器，本模板不再追路径；机器私有偏好放 ~/.bashrc.local（末尾加载可覆盖）
+[ -f "$HOME/.config/ldc/env.sh" ] && . "$HOME/.config/ldc/env.sh"
 
 ## ---------- 现代工具别名 ----------
 if command -v eza >/dev/null 2>&1; then
@@ -64,6 +64,7 @@ alias ...='cd ../..'
 alias reload='source ~/.bashrc && echo "bashrc 已重载"'
 
 ## ---------- fzf（Ctrl-R 搜历史 / Ctrl-T 搜文件 / Alt-C 跳目录） ----------
+# 键位绑定与补全由 env.sh 接线（ADR-0015 事实外置）；这里只管搜索源与观感
 if command -v fzf >/dev/null 2>&1; then
     # 用 fd 替代默认 find，更快且自动忽略 .git / node_modules
     if command -v fd >/dev/null 2>&1; then
@@ -72,8 +73,6 @@ if command -v fzf >/dev/null 2>&1; then
         export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
     fi
     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
-    [ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && . /usr/share/doc/fzf/examples/key-bindings.bash
-    [ -f /usr/share/doc/fzf/examples/completion.bash ] && . /usr/share/doc/fzf/examples/completion.bash
 fi
 
 ## ---------- 补全 ----------
@@ -99,10 +98,6 @@ case ";${PROMPT_COMMAND:-};" in
     *";history -a;"*) ;;
     *) PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}history -a" ;;
 esac
-
-# vp（Vite+）shims 进 PATH（与 vp env on 等价；两种官方布局都认）
-[ -f "$HOME/.vite-plus/env" ] && . "$HOME/.vite-plus/env"
-[ -f "$HOME/.local/share/vite-plus/env" ] && . "$HOME/.local/share/vite-plus/env"
 
 ## ---------- 机器自留地（必须最末尾） ----------
 # ~/.bashrc.local 是本机私有段（ADR-0003）：bootstrap 首次接管 ~/.bashrc 时从原文件迁移

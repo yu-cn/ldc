@@ -80,5 +80,6 @@
     "workbench.editorAssociations": {
         "file:/**/*.md": "vscode.markdown.editor",
         "vscode-remote:/**/*.md": "vscode.markdown.editor"
-    }
+    },
+    "explorer.confirmDragAndDrop": false
 }

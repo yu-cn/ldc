@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2088  # 标签文案中的 ~/ 是显示约定不参与展开；真实路径展开一律用 $HOME
-# install-dotfiles.sh — dotfiles 层：符号链接 + .bak 备份 + .bashrc.local 机器自留地迁移
+# install-dotfiles.sh — dotfiles 层：模板渲染拷贝（ADR-0015）+ .bak 轮转备份 + .bashrc.local 机器自留地迁移
 #   + gitidentity 占位 + ~/.ldc 指针 + pre-commit 钩子接线
+# 渲染模型（ADR-0015）：落点 = 模板渲染拷贝，机器与仓库的运行时耦合归零（仓库缺席只影响 ldc CLI）。
+#   落点与模板同内容 → 幂等跳过；不同 → 覆盖前备份 .bak（已存在则 .bak.N 递增，绝不静默丢弃机器侧内容）；
+#   符号链接残形（v0.5 旧安装形态 / 外来链接）直接替换不备份——链接本体可再造，指向内容不受影响。
+#   例外：~/.local/bin/ldc 保持符号链接（CLI 入口跟随仓库）。
 # .bashrc.local 机制（ADR-0003 核心）：首次接管 ~/.bashrc 时——整文件备份 .bashrc.bak；
 #   抽取全部标记块（# >>> ... >>> .. # <<< ... <<<）与 nvm 块（export NVM_DIR= 起三行）迁入
 #   .bashrc.local（已存在则不覆盖只提示）；其余差异留在 .bak 由机主自行搬运。
@@ -13,7 +17,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fail=0
 
 link() {
-    # link <仓库源文件> <落点>：已是正确符号链接 → 幂等跳过；旧实体文件 → 备份 .bak 后链接
+    # link <仓库源文件> <落点>：已是正确符号链接 → 幂等跳过；旧实体文件 → 备份 .bak 后链接（仅 CLI 入口用）
     local src=$1 dst=$2 name
     name=$(basename "$dst")
     mkdir -p "$(dirname "$dst")"
@@ -34,6 +38,43 @@ link() {
         step "$name 链接" OK "→ $src"
     else
         step "$name 链接" FAIL
+        fail=$((fail + 1))
+    fi
+}
+
+render() {
+    # render <仓库模板> <落点> <显示名>（ADR-0015 渲染拷贝）：同内容幂等跳过；
+    # 不同内容先轮转备份 .bak/.bak.N 再渲染；符号链接残形直接替换（见文件头注释）
+    local src=$1 dst=$2 name=$3 bak n
+    if [ ! -f "$src" ]; then
+        step "$name" FAIL "模板缺失：${src#"$ROOT"/}"
+        fail=$((fail + 1))
+        return 0
+    fi
+    mkdir -p "$(dirname "$dst")"
+    if [ ! -L "$dst" ] && [ -f "$dst" ] && cmp -s "$dst" "$src"; then
+        step "$name" SKIP '已与模板一致'
+        return 0
+    fi
+    if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+        bak="$dst.bak"; n=1
+        while [ -e "$bak" ]; do bak="$dst.bak.$n"; n=$((n + 1)); done
+        if cp -p "$dst" "$bak"; then
+            step "$name" CHANGED "落点与模板不一致——旧内容已备份 $(basename "$bak")（可 ldc triage 吸收）"
+        else
+            step "$name" FAIL "备份失败（$bak）——放弃渲染以防丢失机器侧内容"
+            fail=$((fail + 1))
+            return 0
+        fi
+    elif [ -L "$dst" ]; then
+        old_target=$(readlink "$dst")
+        rm -f "$dst"
+        step "$name" CHANGED "符号链接已替换为渲染拷贝（原指向 ${old_target:-死链}，ADR-0015 迁移）"
+    fi
+    if install -m 0644 "$src" "$dst"; then
+        step "$name" OK "已渲染 ← ${src#"$ROOT"/}"
+    else
+        step "$name" FAIL "渲染失败 ← ${src#"$ROOT"/}"
         fail=$((fail + 1))
     fi
 }
@@ -77,24 +118,14 @@ if [ ! -e "$HOME/.bashrc.local" ]; then
     step '.bashrc.local' CHANGED '已创建（空自留地）'
 fi
 
-phase 'dotfiles · 符号链接'
-link "$ROOT/dotfiles/linux/bashrc"           "$HOME/.bashrc"
-link "$ROOT/dotfiles/linux/gitconfig"        "$HOME/.gitconfig"
-mkdir -p "$HOME/.config"
-link "$ROOT/dotfiles/shared/starship.toml"   "$HOME/.config/starship.toml"
-# ldc CLI 薄入口（对齐 wdc 的 profile 转发习惯；Linux 用符号链接更通用——非交互 shell 也可用，
-# 任意目录裸命令 `ldc sync`）。仓库迁移后重跑 bootstrap 会自动重指
-mkdir -p "$HOME/.local/bin"
-link "$ROOT/ldc"                             "$HOME/.local/bin/ldc"
-# VSCode 配置（ADR-0008 桌面应用域；headless 机器不经 Remote 用到本机 VSCode，不链接）。
-# 注意：VSCode 会写穿 settings.json（改设置时直落模板）——防写穿断言 + triage 分流；
-# 首次启动须关闭 Settings Sync（账号级开关，云端会与仓库 dotfiles 打架，WDC 同款教训）
-if desktop_stack_present; then
-    link "$ROOT/dotfiles/linux/vscode-settings.json"   "$HOME/.config/Code/User/settings.json"
-    link "$ROOT/dotfiles/linux/vscode-keybindings.json" "$HOME/.config/Code/User/keybindings.json"
-else
-    step 'vscode 配置链接' SKIP '非桌面机器形态（ADR-0008）'
-fi
+phase 'dotfiles · 落点渲染（映射单一来源 dotfiles_map，ADR-0015）'
+while IFS='|' read -r name tmpl target _gate mode; do
+    case $mode in
+        render) render "$ROOT/$tmpl" "$HOME/$target" "$name" ;;
+        link)   link "$ROOT/$tmpl" "$HOME/$target" ;;
+    esac
+done < <(dotfiles_map_entries)
+desktop_stack_present || step 'VSCode 配置渲染' SKIP '非桌面机器形态（ADR-0008）'
 
 phase 'dotfiles · 机器数据文件（gitidentity 占位 / gitconfig.local）'
 if [ ! -e "$HOME/.gitidentity" ]; then
@@ -110,12 +141,12 @@ EOF
 else
     step '.gitidentity' SKIP '已存在'
 fi
-# gitconfig 自留地（ADR-0003，与 .bashrc.local 同构）：gh auth setup-git 等写穿模板符号链接的
+# gitconfig 自留地（ADR-0003，与 .bashrc.local 同构）：gh auth setup-git 等机器工具直改落点渲染物的
 # 机器段迁来这里；模板经 [include] 引用，文件缺失时 git 静默忽略
 if [ ! -e "$HOME/.gitconfig.local" ]; then
     {
         echo '# ~/.gitconfig.local — 机器自留地（ADR-0003，与 .bashrc.local 同构）：LDC 不管理、不入仓库'
-        echo '# gh auth setup-git 写穿模板符号链接的凭据段迁到这里；此后由机主维护。'
+        echo '# gh auth setup-git 直改落点的凭据段迁到这里；此后由机主维护（triage 分流入口）。'
     } > "$HOME/.gitconfig.local"
     step '.gitconfig.local' CHANGED '已创建（空自留地）'
 else

@@ -12,7 +12,7 @@ LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可�
 
 ## 结构速览
 
-- `configs/` 声明式层（清单与版本钉子；可选包组平铺其中——指名安装、不进断言，ADR-0010） · `scripts/` 编排层 · `dotfiles/` dotfiles 层（ADR-0002）
+- `configs/` 声明式层（清单与版本钉子；可选包组平铺其中——指名安装、不进断言，ADR-0010） · `scripts/` 编排层 · `dotfiles/` dotfiles 层（ADR-0002；落点渲染拷贝见 ADR-0015，落点映射单一来源在 `scripts/lib/common.sh` 的 `dotfiles_map`）
 - `bootstrap.sh` 唯一入口 · `validate.sh` 无副作用校验 · `ldc` CLI · `scripts/verify-machine.sh` 机器断言 · `scripts/plan-machine.sh` 干跑预演（只读）
 - `CONTRIBUTING.md` 对外贡献指南 · `docs/dev-standard.md` 内部开发规范（双仓同源，主作者位 LDC，ADR-0012）
 
@@ -29,7 +29,7 @@ LDC 与 WDC 同主人关联项目，改动需跨仓库统筹：
 1. **版本钉子单一来源**：vp/lazygit/starship/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它（starship 的 rust 资产命名与 lazygit 的 x86_64 例外都在 install-user-tools 调用点注释）；starship/lazygit/nerd-fonts 的 sha256 行（`sha256 [amd64|arm64] <hex>`）与版本行同文件同次更新、重算自官方 release 资产（ADR-0011）
 2. **`.bashrc.local` / `.gitconfig.local` 是机器自留地**：永不入仓库、永不覆写（已存在只提示）；nvm 属自留地，不卸载、不主动清理（LDC 是「只装不删」语义，无移除清单——WDC 的 remove-leftovers 不搬过来）
 3. **git 身份不入仓库**：模板经 `[include] path = ~/.gitidentity` 引用；占位文件的 name/email 必须保持注释态（这是「未填则拒提交」护栏生效的前提）
-4. **dotfiles 落点是符号链接**：任何写穿（机器工具直改模板）都是漂移，verify 有断言、triage 负责分流
+4. **dotfiles 落点是模板的渲染拷贝**（ADR-0015，2026-10-25 反转原「符号链接」条款）：机器与仓库只在 bootstrap 收敛时耦合——落点漂移=机器侧直改落点或模板未重渲染；verify 内容断言暴露、triage 分流（吸收=落点回写模板并显式暂存 / 还原=自模板重渲染）；覆盖落点前必备份 `.bak`（绝不静默丢弃机器侧内容）；改模板须重跑 bootstrap / ldc sync 才生效
 5. **不替用户做首次 commit**：身份未填时提交会造出占位作者污染历史；交接命令见 README/AGENTS 惯例
 6. **install-packages.sh 必须可独立 `sudo bash` 运行**（ADR-0004 交接命令依赖此性质）
 7. **exit 码语义**：0 就绪 / 1 失败 / 2 有待办手工步骤——`ldc status` 与 CI 依赖此约定
@@ -50,4 +50,4 @@ bash scripts/plan-machine.sh           # 干跑预演（只读）——改安装
 
 ## 已知坑
 
-1. **仓库缺席 → 系统配置死链失联**（2026-10-25 定性，实录自 WDC 侧同构事故，WDC 侧条目见其 docs/agents/collaboration.md 坑15）：`~/dev/ldc` 被删则 `~/.gitconfig` / `~/.bashrc` / `~/.config/starship.toml` 三条符号链接全变死链——Ubuntu 内 git 一切命令 fatal（**死链挡 clone 本身**，实测 exit 128）；bash/starship 静默降级；`~/.gitidentity` 不入仓库故幸存。两仓失效面互相隔离：删 LDC 不影响 Windows 侧（WDC 链接），反之亦然。恢复（无需提权）：`rm -f ~/.gitconfig` → `git clone https://github.com/yu-cn/ldc.git ~/dev/ldc`（同路径则 bashrc/starship 链即刻复活）→ `bash bootstrap.sh` 重链（install-dotfiles.sh 的 ln -sfn 天然覆盖死链）→ `bash scripts/verify-machine.sh --quick` 验收。WDC 的官方重装路径（install-wsl-env.ps1 → setup-ubuntu.sh ensure_ldc）已补死链预清，可自愈。
+1. **仓库缺席 → 系统配置死链失联**（2026-10-25 定性；**同日经 ADR-0015 渲染拷贝根治**，本条降级为历史档案）：原失效面（v0.5 及以前的符号链接形态，实录自 WDC 侧同构事故，其条目见 WDC docs/agents/collaboration.md 坑15）：`~/dev/ldc` 被删则 `~/.gitconfig` / `~/.bashrc` / `~/.config/starship.toml` 三条符号链接全变死链——git 一切命令 fatal（死链挡 clone 本身，exit 128），bash/starship 静默降级。渲染拷贝后仓库缺席仅影响 `ldc` CLI 自身（自描述报错带恢复指引），git/bash/starship/VSCode 全部照常。历史恢复配方：`rm -f ~/.gitconfig` → clone 仓库 → `bash bootstrap.sh` 重渲染 → `bash scripts/verify-machine.sh --quick` 验收。

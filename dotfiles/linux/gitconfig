@@ -1,7 +1,7 @@
-# ~/.gitconfig 模板（LDC 仓库管理，Linux 侧；符号链接到 ~/.gitconfig）
+# ~/.gitconfig 模板（LDC 仓库管理，Linux 侧；bootstrap 渲染拷贝到 ~/.gitconfig，ADR-0015）
 # 身份不入仓库：[user] 由每机本地的 ~/.gitidentity 提供（bootstrap 首跑生成占位）
-# 机器自留地：~/.gitconfig.local（gh 凭据助手等按机配置放这里——gh auth setup-git 会写穿
-# 本符号链接，写穿段属机器噪声，triage 还原后迁入 local；ADR-0003 与 .bashrc.local 同构）
+# 机器自留地：~/.gitconfig.local（gh 凭据助手等按机配置放这里——gh auth setup-git 直改落点渲染物，
+# 直改段属机器噪声，triage 分流后迁入 local；ADR-0003 与 .bashrc.local 同构）
 # 相对 WDC wsl 版的改动：去掉 longpaths（Windows 专属）；不设 core.editor（服务器无 code，
 # 编辑器属机器自留地，走 git 默认链——见 ADR-0002 附注）
 [include]

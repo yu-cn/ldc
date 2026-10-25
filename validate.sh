@@ -171,6 +171,52 @@ else
         fail=$((fail + 1))
     fi
 fi
+# ADR-0015 渲染模型自测：dotfiles_entry_state 状态判定（render ok/absent/drift/残形 · link ok/drift）
+ds_ok=1
+ds_dir=$(mktemp -d)
+printf 'a\n' > "$ds_dir/t"
+printf 'a\n' > "$ds_dir/same"
+printf 'b\n' > "$ds_dir/diff"
+[ "$(dotfiles_entry_state "$ds_dir/t" "$ds_dir/same" render)" = ok ] || ds_ok=0
+[ "$(dotfiles_entry_state "$ds_dir/t" "$ds_dir/diff" render)" = drift ] || ds_ok=0
+[ "$(dotfiles_entry_state "$ds_dir/t" "$ds_dir/none" render)" = absent ] || ds_ok=0
+ln -s "$ds_dir/t" "$ds_dir/lnk"
+[ "$(dotfiles_entry_state "$ds_dir/t" "$ds_dir/lnk" render)" = drift ] || ds_ok=0   # 渲染模型不容符号链接残形
+[ "$(dotfiles_entry_state "$ds_dir/t" "$ds_dir/lnk" link)" = ok ] || ds_ok=0
+ln -sf /nonexistent "$ds_dir/lnk2"
+[ "$(dotfiles_entry_state "$ds_dir/t" "$ds_dir/lnk2" link)" = drift ] || ds_ok=0
+printf 'c\n' > "$ds_dir/reg"
+[ "$(dotfiles_entry_state "$ds_dir/t" "$ds_dir/reg" link)" = drift ] || ds_ok=0
+rm -rf "$ds_dir"
+if [ "$ds_ok" -eq 1 ]; then
+    step '落点状态自测（dotfiles_entry_state）' OK 'render ok/absent/drift/残形 · link ok/drift'
+else
+    step '落点状态自测（dotfiles_entry_state）' FAIL '状态判定不符预期'
+    fail=$((fail + 1))
+fi
+# 落点映射自测：dotfiles_map 引用的每个模板必须真实存在（防映射与仓库漂移）
+map_bad=''
+while IFS='|' read -r _name tmpl _target _gate _mode; do
+    [ -f "$ROOT/$tmpl" ] || map_bad+=" $tmpl"
+done < <(dotfiles_map)
+if [ -z "$map_bad" ]; then
+    step '落点映射自测（dotfiles_map）' OK '全部模板在位'
+else
+    step '落点映射自测（dotfiles_map）' FAIL "模板缺失：$map_bad"
+    fail=$((fail + 1))
+fi
+# bashrc 事实外置契约自测（ADR-0015）：模板只经 env.sh 取工具布局事实——不得再硬编码
+# vp env 候选路径 / fzf 示例路径（上游换布局只改安装器，改回来即违约）
+br_ok=1
+grep -q '.config/ldc/env.sh' "$ROOT/dotfiles/linux/bashrc" || br_ok=0
+grep -q 'vite-plus/env' "$ROOT/dotfiles/linux/bashrc" && br_ok=0
+grep -q 'doc/fzf/examples' "$ROOT/dotfiles/linux/bashrc" && br_ok=0
+if [ "$br_ok" -eq 1 ]; then
+    step 'bashrc 事实外置契约自测（ADR-0015）' OK '仅 source env.sh，无硬编码工具路径'
+else
+    step 'bashrc 事实外置契约自测（ADR-0015）' FAIL '模板又硬编码了工具布局路径（应走 env.sh 事实文件）'
+    fail=$((fail + 1))
+fi
 # ldc 错命令建议（集成）：建议逻辑在仓库定位之前，无需 ~/.ldc 指针
 bad_out=$(bash "$ROOT/ldc" syncz 2>&1)
 bad_rc=$?
