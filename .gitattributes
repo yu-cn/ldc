@@ -1,1 +1,5 @@
 * text=auto eol=lf
+
+# 二进制资产（WDC 坑8 同款教训：文本规则会洗损二进制，显式豁免）
+*.gif binary
+*.ico binary

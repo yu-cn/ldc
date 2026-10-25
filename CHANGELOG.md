@@ -1,34 +1,64 @@
-# 更新日志（CHANGELOG）
+# Changelog
 
-面向使用者的版本要点摘录；完整变更、决策 ADR 与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases) 与 git log。发版时随 release notes 同步摘录本文件。
+本项目所有显著变更记录于此文件。
 
-## v0.6.0 — dotfiles 渲染拷贝（ADR-0015）（2026-10-25）
+格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)（显著变更人为记录、分类归档、每个版本可跳转）；版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
 
-- **dotfiles 落点反转符号链接模型**：改安装期渲染拷贝——仓库缺席不再影响已收敛机器（只剩 `ldc` CLI 自身，报错自带恢复指引）；机器侧直改落点不再污染仓库，verify/status 内容断言暴露、triage 分流（吸收/还原）；覆盖前轮转备份 `.bak`
-- 工具布局事实外置 `~/.config/ldc/env.sh`——bashrc 模板不再硬编码 vp/fzf 路径，上游换布局只改安装器
-- 同批：中文输入换代 ibus-rime+雾凇、assert_pin 三钉入断言面 + 红线 11「不重写包管理」、flock 运行锁（ADR-0013）、上游跟进机制（ADR-0014）、get.sh tag 钉版、CI 冒烟补幂等重跑段
+## [Unreleased]
 
-## v0.5.0 — 零前置快速开始：get.sh 远程一键引导（2026-10-24）
+### Added
+- `ldc audit` 清单准入对账：自装未声明（对全部 `.pkg` 并集的差集，喂清单准入）与已声明未装（收敛待办）两个方向，只读恒 exit 0
+- 可选包组 `etckeeper`：`/etc` 纳入 git 审计——apt 事务前后与每日自动 commit（systemd timer + apt 钩子），root 写入面（daemon.json 合并等）自此有机器侧留痕
+- 漂移方向判定（ADR-0015 补注）：渲染账本 `~/.local/state/ldc/rendered.sha256` 判定 template-update / machine / both / unknown 四方向——纯模板更新直接重渲染、不再产生 `.bak`
+- CHANGELOG（本文件）与终端演示 `docs/demo.cast`
 
-- 新机器一条命令收敛：`curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash`——缺 git/curl 自动 apt 装、`~/.ldc` 指针复用、转发 bootstrap
-- fork 用户走手动 clone 两行（get.sh 写死上游地址）
+## [0.6.0] – 2026-10-25
 
-## v0.4.0 — 可选包组、干跑预演与供应链钉（2026-10-24）
+### Changed
+- **破坏性**：dotfiles 落点由符号链接改为安装期渲染拷贝（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）——仓库缺席不再影响已收敛机器（只剩 `ldc` CLI 自身）；机器侧直改落点不再污染仓库，verify / status 改内容断言、triage 分流（吸收 / 还原）；覆盖前轮转备份 `.bak`
 
-- 可选包组（ADR-0010）：清单即菜单、`sudo bash scripts/install-packages.sh <组>` 显式指名、dpkg 记账不进断言面（首个成员 media-doc）
-- `ldc plan` 干跑预演：只读投影重跑会做什么（OK/PLAN/SKIP/INFO 四态）
-- 供应链钉（ADR-0011）：starship/lazygit/字体版本 + sha256 同文件双钉，下载先校验后落盘
+### Added
+- 工具布局事实文件 `~/.config/ldc/env.sh`：bashrc 模板不再硬编码 vp / fzf 路径，上游换布局只改安装器
+- verify `assert_pin`：starship / lazygit / vp 三钉全入断言面；红线 11「不重写包管理」入册
+- 中文输入换代 ibus-rime + 雾凇拼音（ADR-0005 补记）
+- bootstrap flock 运行锁（ADR-0013）；上游跟进机制（ADR-0014：check-upstream + status 30 天提醒）；get.sh 支持 tag 钉版
+- CI 冒烟补幂等重跑段（第二遍 exit 0 且零 CHANGED 才放行）
 
-## v0.3.0 — WDC 委托落地与 Docker 配置域（2026-10-24）
+## [0.5.0] – 2026-10-24
 
-- ADR-0007 双仓统筹从契约变事实：WSL 发行版环境由 WDC 委托 LDC 收敛，Linux 侧单一来源归位
+### Added
+- `scripts/get.sh` 零前置远程一键引导：缺 git / curl 自动 apt 装、`~/.ldc` 指针复用、转发 bootstrap
+
+## [0.4.0] – 2026-10-24
+
+### Added
+- 可选包组（ADR-0010）：清单即菜单、`install-packages.sh <组>` 显式指名、dpkg 记账不进断言面（首个成员 media-doc）
+- `ldc plan` 干跑预演：只读投影重跑会做什么（OK / PLAN / SKIP / INFO）
+
+### Changed
+- 下载资产从只钉版本升级为版本 + sha256 同文件双钉（ADR-0011），校验不符即拒绝安装
+
+## [0.3.0] – 2026-10-24
+
+### Added
 - Docker daemon.json 受保护合并（ADR-0009）：声明叶键胜出、机器自有键保留、绝不自动重启
+- WSL 发行版环境由 WDC 委托 LDC 收敛（ADR-0007 契约落地），Linux 侧单一来源归位
 
-## v0.2.0 — 桌面应用域与 WDC 统筹（2026-10-24）
+## [0.2.0] – 2026-10-24
 
-- 桌面 Linux 机的 GUI 软件纳入声明（ADR-0008：VSCode + 扩展清单 + Chrome，双架构厂商源对称）
-- WDC↔LDC 双仓统筹定稿（ADR-0007）；CI 验证面扩到三腿（handoff + amd64/arm64 容器冒烟）
+### Added
+- 桌面应用域（ADR-0008）：VSCode + 扩展清单 + Chrome，双架构厂商源对称
+- CI 验证面扩三腿（handoff + amd64 / arm64 容器冒烟）
 
-## v0.1.0 — 开源基线（2026-10-23）
+## [0.1.0] – 2026-10-23
 
-- 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
+### Added
+- 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
+
+[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/yu-cn/ldc/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/yu-cn/ldc/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/yu-cn/ldc/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/yu-cn/ldc/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/yu-cn/ldc/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/yu-cn/ldc/releases/tag/v0.1.0

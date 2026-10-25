@@ -5,6 +5,11 @@
 [![validate](https://github.com/yu-cn/ldc/actions/workflows/validate.yml/badge.svg)](https://github.com/yu-cn/ldc/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+<p align="center">
+  <a href="docs/demo.cast"><img src="docs/demo.gif" width="720" alt="ldc 终端速览：ldc / ldc plan / ldc verify --quick（约 4 秒循环播放）"></a>
+</p>
+<p align="center"><sub>↑ 速览：<code>ldc</code> 快照 · <code>ldc plan</code> 干跑预演 · <code>ldc verify --quick</code> 机器断言（源文件 <a href="docs/demo.cast">docs/demo.cast</a>）</sub></p>
+
 基于 [WDC](https://github.com/yu-cn/wdc)（Windows + WSL 同思路仓库）的经验自建，独立仓库不 fork（[ADR-0001](docs/adr/0001-own-tree-not-fork-wdc.md)）。两仓为**对等的关联项目**：WDC 主管 Windows 侧，LDC 主管 Linux 侧（含 WSL Ubuntu），各自完整自闭环；WSL 的 Linux 收敛由 WDC 移交 LDC（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md)）。仓库以 [MIT](LICENSE) 开源，欢迎直接使用或 fork 改造成你自己的环境。
 
 **支持的机器形态**：Ubuntu/Debian · **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
@@ -110,8 +115,8 @@ dotfiles/   dotfiles 层：linux / shared 两处，渲染拷贝安装（覆盖�
 
 ## 文档
 
-- 词汇表：[GLOSSARY.md](GLOSSARY.md) · 决策：[docs/adr/](docs/adr/) · 面向 agent 的红线：[AGENTS.md](AGENTS.md) · 版本要点：[CHANGELOG.md](CHANGELOG.md)
-- 演示：[docs/demo.cast](docs/demo.cast)（asciinema v2 终端录播——`ldc status / plan / verify / help` 速览；本地 `asciinema play docs/demo.cast` 观看，或拖入 asciinema.org 在线播放）
+- 词汇表：[GLOSSARY.md](GLOSSARY.md) · 决策：[docs/adr/](docs/adr/) · 面向 agent 的红线：[AGENTS.md](AGENTS.md) · 更新日志：[CHANGELOG.md](CHANGELOG.md)（Keep a Changelog）
+- 首屏演示由 [docs/demo.cast](docs/demo.cast)（asciinema v2 录播，真实命令输出脱敏生成）经 [agg](https://github.com/asciinema/agg) 转 GIF 嵌入——`asciinema play docs/demo.cast` 可原速回放
 - 工单与规格：`.scratch/`（作者的本地 markdown 工单流）
 
 ## 许可证
