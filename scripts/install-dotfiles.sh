@@ -79,8 +79,13 @@ render() {
     fi
 }
 
-phase 'dotfiles · .bashrc.local 迁移（仅首次接管时）'
-if [ -f "$HOME/.bashrc" ] && [ ! -L "$HOME/.bashrc" ]; then
+phase 'dotfiles · .bashrc.local 迁移（仅首次接管时——自留地存在即视为已完成）'
+# ADR-0015：渲染拷贝后 ~/.bashrc 是实体文件，旧判据「非符号链接」会把自家渲染物误当原始文件
+# 重跑迁移（CI 冒烟实录：容器第二遍 CHANGED）。首接管的真正标记是自留地不存在——
+# 兜底块保证任何一跑后 .bashrc.local 必在，故「自留地缺失」⟺ 从未接管过。
+if [ -e "$HOME/.bashrc.local" ]; then
+    step '.bashrc.local' SKIP '已存在——迁移已完成（机主维护，ADR-0003）'
+elif [ -f "$HOME/.bashrc" ] && [ ! -L "$HOME/.bashrc" ]; then
     # 整文件备份（保最早原件：已存在 .bak 则不动）
     if [ ! -e "$HOME/.bashrc.bak" ]; then
         cp "$HOME/.bashrc" "$HOME/.bashrc.bak"
@@ -88,25 +93,21 @@ if [ -f "$HOME/.bashrc" ] && [ ! -L "$HOME/.bashrc" ]; then
     else
         step '.bashrc.bak' SKIP '已存在（保最早原件）'
     fi
-    if [ -e "$HOME/.bashrc.local" ]; then
-        step '.bashrc.local' SKIP '已存在，不覆盖（机主维护）'
+    # 标记块/nvm 块抽取走 common.sh 的 bashrc_local_extract（validate 自测共用）
+    extracted=$(bashrc_local_extract "$HOME/.bashrc")
+    {
+        echo '# ~/.bashrc.local — 机器自留地（ADR-0003）：LDC 不管理、不入仓库'
+        echo '# 由 bootstrap 首次接管 ~/.bashrc 时自动迁移（标记块 + nvm 块）；此后由机主自行维护。'
+        echo '# 本文件在模板 bashrc 最末尾加载——别名/环境可覆盖模板。'
+        [ -n "$extracted" ] && printf '\n%s\n' "$extracted"
+    } > "$HOME/.bashrc.local"
+    if [ -n "$extracted" ]; then
+        step '.bashrc.local' CHANGED '已从原 bashrc 迁移标记块/nvm 块'
     else
-        # 标记块/nvm 块抽取走 common.sh 的 bashrc_local_extract（validate 自测共用）
-        extracted=$(bashrc_local_extract "$HOME/.bashrc")
-        {
-            echo '# ~/.bashrc.local — 机器自留地（ADR-0003）：LDC 不管理、不入仓库'
-            echo '# 由 bootstrap 首次接管 ~/.bashrc 时自动迁移（标记块 + nvm 块）；此后由机主自行维护。'
-            echo '# 本文件在模板 bashrc 最末尾加载——别名/环境可覆盖模板。'
-            [ -n "$extracted" ] && printf '\n%s\n' "$extracted"
-        } > "$HOME/.bashrc.local"
-        if [ -n "$extracted" ]; then
-            step '.bashrc.local' CHANGED '已从原 bashrc 迁移标记块/nvm 块'
-        else
-            step '.bashrc.local' CHANGED '已创建（原 bashrc 无标记块/nvm 块，空自留地）'
-        fi
+        step '.bashrc.local' CHANGED '已创建（原 bashrc 无标记块/nvm 块，空自留地）'
     fi
 elif [ -L "$HOME/.bashrc" ]; then
-    step '.bashrc.local' SKIP 'bashrc 已是符号链接（非首次接管，或外来管理器——WDC WSL 委托迁移场景，见 ADR-0007）'
+    step '.bashrc.local' SKIP 'bashrc 已是符号链接（外来管理器——WDC WSL 委托迁移场景，见 ADR-0007）'
 fi
 # 兜底：任何路径都保证 .bashrc.local 存在——模板末尾会 source 它；外来符号链接接管时
 # 原管理器（如 WDC）没建过自留地，新机器也可能根本没有 ~/.bashrc
