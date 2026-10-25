@@ -20,7 +20,7 @@
 - [x] ldc plan 投影显示「符号链接 → 渲染拷贝」迁移（5 落点 PLAN、ldc CLI OK）
 - [x] 本机真实迁移：install-dotfiles 后落点为实体文件（`-rw-r--r--`）、内容与模板一致；`.bashrc.bak` 最早原件保全
 - [x] verify --quick 全绿；迁移前写穿漂移（gh 凭据段已在 local）+ 迁移中 VSCode 写落点（explorer.confirmDragAndDrop=false，模型上线即刻被内容断言抓到，按 ADR-0003 判据吸收进模板）
-- [ ] CI fresh-container 冒烟绿（push 后看 run）
+- [x] CI fresh-container 冒烟绿（run 40211854555：amd64/arm64/handoff 三腿 ✓，含幂等重跑关卡；首跑 40211476066 抓到迁移判据破绽已修，见实录）
 - [ ] WDC 侧对等实施（本机无 pwsh，待 Windows 侧会话；以 ADR-0015 WDC 条款为准）
 
 ## 实录
