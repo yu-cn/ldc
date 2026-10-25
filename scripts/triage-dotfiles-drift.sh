@@ -32,7 +32,15 @@ while IFS='|' read -r name tmpl target _gate mode; do
     dst="$HOME/$target"
     [ "$(dotfiles_entry_state "$src" "$dst" "$mode")" = drift ] || continue
     echo
-    echo "── $name（模板 $tmpl ↔ 落点 ~/$target）──"
+    dir=''
+    [ "$mode" = render ] && dir=$(drift_direction "$src" "$dst")
+    case $dir in
+        template-update) echo "── $name（模板 $tmpl ↔ 落点 ~/$target）〔模板更新——通常选 r〕──" ;;
+        machine)         echo "── $name（模板 $tmpl ↔ 落点 ~/$target）〔机器侧改动〕──" ;;
+        both)            echo "── $name（模板 $tmpl ↔ 落点 ~/$target）〔双向漂移——注意吸收(a) 会盖掉模板更新〕──" ;;
+        unknown)         echo "── $name（模板 $tmpl ↔ 落点 ~/$target）〔方向未知（渲染账本缺失）〕──" ;;
+        *)               echo "── $name（模板 $tmpl ↔ 落点 ~/$target）──" ;;
+    esac
     if [ "$mode" = link ]; then
         echo "预期符号链接 → $src"
         echo "实际：$(readlink "$dst" 2>/dev/null || { [ -e "$dst" ] && echo "实体文件（非链接）" || echo '缺失'; })"

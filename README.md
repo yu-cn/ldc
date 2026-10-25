@@ -9,7 +9,7 @@
 
 **支持的机器形态**：Ubuntu/Debian · **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
 
-**安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· dotfiles 落点为模板渲染拷贝——仓库缺席不影响已收敛机器，覆盖前备份 `*.bak`（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）· Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
+**安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· dotfiles 落点为模板渲染拷贝——仓库缺席不影响已收敛机器；纯模板更新直接重渲染（渲染账本判定），机器侧改动覆盖前必备份 `*.bak`（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）· Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
 
 ## 快速开始（新机器）
 
@@ -55,7 +55,7 @@ cd <repo> && sudo bash scripts/install-packages.sh
 build-essential · git · curl/wget · jq · fzf / ripgrep / bat / fd / zoxide / eza / git-delta / tree / htop / shellcheck · gh（官方 apt 源）· Docker Engine（已装则跳过，默认用户入 docker 组；daemon.json [受保护合并](configs/docker-daemon.json)声明日志轮转与 live-restore——机器自有键保留，不自动重启，[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）
 
 **可选包组**（不随 bootstrap，[ADR-0010](docs/adr/0010-optional-package-groups.md)）
-常用但非每台必需的工具按组平铺在 [configs/](configs/)（首个成员 [media-doc](configs/media-doc.pkg)：pandoc + ffmpeg），`sudo bash scripts/install-packages.sh media-doc` 显式指名安装——装没装由 dpkg 记账，verify 不断言；新增可选组只需加一个清单文件。
+常用但非每台必需的工具按组平铺在 [configs/](configs/)（[media-doc](configs/media-doc.pkg)：pandoc + ffmpeg · [etckeeper](configs/etckeeper.pkg)：/etc 纳入 git 审计，apt 事务与机主自改全程留痕），`sudo bash scripts/install-packages.sh <组名>` 显式指名安装——装没装由 dpkg 记账，verify 不断言；新增可选组只需加一个清单文件。
 
 **语言运行时**（user 阶段）
 Node 归 **vp**（[版本钉 configs](configs/vp-version)，默认跟随 LTS）、Python 归 **uv**——与 WDC 两侧同工具同习惯；机器已有的 nvm 等属自留地，共存不卸载（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）
@@ -83,7 +83,8 @@ bashrc（历史/别名/fzf/zoxide/starship + 工具布局事实 [env.sh](scripts
 | `ldc` | 只读快照（裸命令默认，秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap |
 | `ldc plan` | 干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼 |
 | `ldc sync` | 日常一键同步（fetch → pull --ff-only → bootstrap → verify 全量） |
-| `ldc verify [--full]` / `ldc triage` / `ldc log` / `ldc help` | 机器断言（默认 --quick）/ dotfiles 落点漂移分流 / 最近日志尾部 / 帮助与版本 |
+| `ldc verify [--full]` / `ldc audit` | 机器断言（默认 --quick）/ 清单准入对账（自装未声明 / 已声明未装，只读） |
+| `ldc triage` / `ldc log` / `ldc help` | dotfiles 落点漂移分流 / 最近日志尾部 / 帮助与版本 |
 | `bash bootstrap.sh` | 完整收敛（日常改了配置后重跑） |
 | `bash validate.sh` | 只做无副作用校验（bash -n + shellcheck + 清单格式） |
 | `bash scripts/verify-machine.sh [--quick]` | 机器断言的脚本直跑形态 |
@@ -109,7 +110,8 @@ dotfiles/   dotfiles 层：linux / shared 两处，渲染拷贝安装（覆盖�
 
 ## 文档
 
-- 词汇表：[GLOSSARY.md](GLOSSARY.md) · 决策：[docs/adr/](docs/adr/) · 面向 agent 的红线：[AGENTS.md](AGENTS.md)
+- 词汇表：[GLOSSARY.md](GLOSSARY.md) · 决策：[docs/adr/](docs/adr/) · 面向 agent 的红线：[AGENTS.md](AGENTS.md) · 版本要点：[CHANGELOG.md](CHANGELOG.md)
+- 演示：[docs/demo.cast](docs/demo.cast)（asciinema v2 终端录播——`ldc status / plan / verify / help` 速览；本地 `asciinema play docs/demo.cast` 观看，或拖入 asciinema.org 在线播放）
 - 工单与规格：`.scratch/`（作者的本地 markdown 工单流）
 
 ## 许可证

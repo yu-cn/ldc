@@ -230,6 +230,51 @@ dotfiles_entry_state() {
     return 0
 }
 
+content_hash() {
+    # content_hash <文件> —— sha256 十六进制（渲染账本与方向判定的内容指纹）
+    sha256sum "$1" 2>/dev/null | awk '{print $1}'
+}
+
+render_state_file() {
+    # 渲染账本（ADR-0015 补注：漂移方向判定）——sha256sum 兼容格式「<hash>␣␣<落点绝对路径>」
+    # 记录上次渲染时各落点的内容指纹。账本可丢：缺失/损坏时方向判定退化为 unknown（等同
+    # ADR-0015 首版行为），下次渲染自愈重建。
+    printf '%s\n' "${XDG_STATE_HOME:-$HOME/.local/state}/ldc/rendered.sha256"
+}
+
+render_state_get() {
+    # render_state_get <落点绝对路径> —— 上次渲染时的内容 hash（无记录返回 1）
+    local f dst=$1
+    f=$(render_state_file)
+    [ -f "$f" ] || return 1
+    # 路径自第 67 字符起（64 位 hash + 2 空格）；精确匹配避免前缀串扰
+    awk -v d="$dst" 'substr($0, 67) == d { print substr($0, 1, 64); found = 1; exit }
+                     END { exit !found }' "$f"
+}
+
+render_state_set() {
+    # render_state_set <落点绝对路径> <hash> —— 单行更新（有则覆写无则追加；tmp+mv 原子落盘）
+    local f dst=$1 hash=$2 tmp
+    f=$(render_state_file)
+    mkdir -p "$(dirname "$f")"
+    tmp=$(mktemp "$(dirname "$f")/.rendered.XXXXXX")
+    { [ -f "$f" ] && awk -v d="$dst" 'substr($0, 67) != d' "$f"; printf '%s  %s\n' "$hash" "$dst"; } > "$tmp"
+    mv "$tmp" "$f"
+}
+
+drift_direction() {
+    # drift_direction <模板绝对路径> <落点绝对路径> —— 漂移方向（ADR-0015 补注）：
+    #   template-update 模板更新（落点自上次渲染未动——纯模板更新，重渲染无机器侧内容可失）
+    #   machine         机器侧改动（模板自上次渲染未动）
+    #   both            双向漂移（吸收会盖掉模板更新——需人工判读 diff 再定）
+    #   unknown         无账本记录（账本丢失 / 首版升级机器）
+    local src=$1 dst=$2 rec
+    rec=$(render_state_get "$dst") || { printf 'unknown\n'; return 0; }
+    if [ "$(content_hash "$dst")" = "$rec" ]; then printf 'template-update\n'; return 0; fi
+    if [ "$(content_hash "$src")" = "$rec" ]; then printf 'machine\n'; else printf 'both\n'; fi
+    return 0
+}
+
 git_identity_ok() {
     # 身份经 include 链生效（效果级，与 verify 断言同口径）；只判非空不取值——身份内容不进日志
     [ -n "$(git config --global --includes --get user.name 2>/dev/null)" ] && \

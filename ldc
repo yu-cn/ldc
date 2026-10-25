@@ -7,6 +7,7 @@
 #   ldc plan            干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼
 #   ldc sync            全量同步：fetch → 落后则 pull（--ff-only）→ bootstrap → verify 全量
 #   ldc verify [--full] 机器断言；默认 --quick 秒级，--full 含桌面域 gsettings 读值比对
+#   ldc audit           清单准入对账（只读）：自装未声明 / 已声明未装
 #   ldc triage          dotfiles 落点漂移分流（交互式：逐文件 吸收/重渲染/跳过）
 #   ldc log [N]         最近一次 bootstrap 日志尾部（默认 40 行）
 #   ldc help [命令]     总览或单命令详解；-h/--help 同义
@@ -18,7 +19,7 @@ SELF="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 . "$SELF/scripts/lib/common.sh"
 
-LDC_COMMANDS='status sync verify plan triage log help version'
+LDC_COMMANDS='status sync verify plan audit triage log help version'
 cmd="${1:-status}"
 [ $# -gt 0 ] && shift
 
@@ -51,6 +52,10 @@ case $cmd in
   机器侧工具会直改落点渲染物（VSCode / gh auth setup-git 等，ADR-0015）；本命令逐文件给出
   「吸收进模板（显式暂存）/ 还原为模板重渲染」的处置入口（ADR-0003 判据）。
   verify 的「落点与模板一致」断言 FAIL 时也会指向这里。' ;;
+            audit) echo 'ldc audit — 清单准入对账（只读，exit 恒 0）
+  两个方向：①自装未声明（apt-mark showmanual 对全部 .pkg 并集的差集，滤掉系统底座）——
+  清单准入候选：每台机器都要的吸收进 .pkg，仅本机要的属机器自留；②已声明未装——收敛待办
+  （root 交接 / install-packages.sh <组>）。这是对账报告不是断言，核销语义在 verify。' ;;
             log) echo 'ldc log [N] — 最近一次 bootstrap 日志尾部（默认 40 行）' ;;
             *) cat <<'EOF'
 ldc — LDC 开发环境一键工具（裸命令只读快照；仓库在 ~/.ldc 指向的路径）
@@ -59,6 +64,7 @@ ldc — LDC 开发环境一键工具（裸命令只读快照；仓库在 ~/.ldc 
   ldc plan             干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼
   ldc sync             全量同步：fetch → pull → bootstrap → verify 全量
   ldc verify [--full]  机器断言（默认 --quick；--full 含桌面域读值比对）
+  ldc audit            清单准入对账（只读）：自装未声明 / 已声明未装
   ldc triage           dotfiles 落点漂移分流（逐文件 吸收/重渲染，交互式）
   ldc log [N]          最近一次 bootstrap 日志尾部（默认 40 行）
   ldc help [命令]      本总览或单命令详解（-h/--help 同义）
@@ -229,6 +235,11 @@ case $cmd in
 
     plan)
         bash "$repo/scripts/plan-machine.sh"
+        exit $?
+        ;;
+
+    audit)
+        bash "$repo/scripts/audit-machine.sh"
         exit $?
         ;;
 

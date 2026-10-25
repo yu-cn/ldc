@@ -4,6 +4,7 @@
 #   + gitidentity 占位 + ~/.ldc 指针 + pre-commit 钩子接线
 # 渲染模型（ADR-0015）：落点 = 模板渲染拷贝，机器与仓库的运行时耦合归零（仓库缺席只影响 ldc CLI）。
 #   落点与模板同内容 → 幂等跳过；不同 → 覆盖前备份 .bak（已存在则 .bak.N 递增，绝不静默丢弃机器侧内容）；
+#   纯模板更新（渲染账本 rendered.sha256 判定落点自上次渲染未动）直接重渲染、不产 .bak；
 #   符号链接残形（v0.5 旧安装形态 / 外来链接）直接替换不备份——链接本体可再造，指向内容不受影响。
 #   例外：~/.local/bin/ldc 保持符号链接（CLI 入口跟随仓库）。
 # .bashrc.local 机制（ADR-0003 核心）：首次接管 ~/.bashrc 时——整文件备份 .bashrc.bak；
@@ -54,17 +55,23 @@ render() {
     mkdir -p "$(dirname "$dst")"
     if [ ! -L "$dst" ] && [ -f "$dst" ] && cmp -s "$dst" "$src"; then
         step "$name" SKIP '已与模板一致'
+        render_state_set "$dst" "$(content_hash "$dst")"   # 账本自愈（SKIP 路径内容=模板，指纹必对）
         return 0
     fi
     if [ -e "$dst" ] && [ ! -L "$dst" ]; then
-        bak="$dst.bak"; n=1
-        while [ -e "$bak" ]; do bak="$dst.bak.$n"; n=$((n + 1)); done
-        if cp -p "$dst" "$bak"; then
-            step "$name" CHANGED "落点与模板不一致——旧内容已备份 $(basename "$bak")（可 ldc triage 吸收）"
+        if [ "$(drift_direction "$src" "$dst")" = template-update ]; then
+            # 纯模板更新（渲染账本判定：落点自上次渲染未动）——直接覆盖，无机器侧内容可失，不产 .bak 噪声
+            step "$name" CHANGED '模板已更新——落点自上次渲染未动，直接重渲染'
         else
-            step "$name" FAIL "备份失败（$bak）——放弃渲染以防丢失机器侧内容"
-            fail=$((fail + 1))
-            return 0
+            bak="$dst.bak"; n=1
+            while [ -e "$bak" ]; do bak="$dst.bak.$n"; n=$((n + 1)); done
+            if cp -p "$dst" "$bak"; then
+                step "$name" CHANGED "落点与模板不一致——旧内容已备份 $(basename "$bak")（可 ldc triage 吸收）"
+            else
+                step "$name" FAIL "备份失败（$bak）——放弃渲染以防丢失机器侧内容"
+                fail=$((fail + 1))
+                return 0
+            fi
         fi
     elif [ -L "$dst" ]; then
         old_target=$(readlink "$dst")
@@ -72,6 +79,7 @@ render() {
         step "$name" CHANGED "符号链接已替换为渲染拷贝（原指向 ${old_target:-死链}，ADR-0015 迁移）"
     fi
     if install -m 0644 "$src" "$dst"; then
+        render_state_set "$dst" "$(content_hash "$dst")"
         step "$name" OK "已渲染 ← ${src#"$ROOT"/}"
     else
         step "$name" FAIL "渲染失败 ← ${src#"$ROOT"/}"

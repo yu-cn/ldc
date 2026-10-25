@@ -22,7 +22,7 @@
 - 手改落点会在下次收敛被覆盖——持久改动走 triage 吸收或自留地（`.bashrc.local` / `.gitconfig.local`），覆盖前 .bak 兜底不丢内容。
 - 机器与仓库的运行时耦合归零：仓库缺席仅影响 ldc CLI 自身（自描述报错指引恢复）；坑1 恢复配方降级为历史档案。
 - 与 ADR-0004「机器派生值不入库、安装期渲染到机器本地」同构：本决策把落点整体视为渲染物，两仓概念统一。
-- 漂移方向判定（区分「模板更新了」vs「机器改了落点」，chezmoi persistent state 的最小化版 rendered.sha256）本版不做，留作增强——轮转备份 + triage 逐文件两问已够用。
+- 漂移方向判定（区分「模板更新了」vs「机器改了落点」，chezmoi persistent state 的最小化版 rendered.sha256）本版不做，留作增强——轮转备份 + triage 逐文件两问已够用。**补注（2026-10-26，主人批准实装）**：增强已落地——渲染账本 `~/.local/state/ldc/rendered.sha256`（sha256sum 兼容格式，记录上次渲染时各落点指纹；可丢，缺失退化 unknown 并在下次渲染自愈）。`drift_direction()` 出四方向：template-update（落点未动=纯模板更新）→ render() 直接重渲染不产 .bak、triage/plan 标注「通常选 r」；machine（模板未动）→ triage 标注；both → triage 警示「吸收会盖掉模板更新」；unknown → 行为等同首版。
 
 ## WDC 条款（ADR-0007 统筹）
 

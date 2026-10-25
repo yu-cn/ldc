@@ -1,0 +1,6 @@
+# etckeeper.pkg — 可选包组（ADR-0010）：/etc 纳入 git 审计，显式指名安装、不进断言面
+# 用法：sudo bash scripts/install-packages.sh etckeeper（装没装由 dpkg 记账）
+# 价值：root 阶段写 /etc 的面（daemon.json 受保护合并、apt keyrings、sources.list.d）
+#   与机主自改全程留痕——apt 事务前后与每日自动 commit；查看：cd /etc && sudo git log
+# postinst 自动 git init /etc 并做初始 commit（VCS 默认 git）；幂等重装无害
+etckeeper

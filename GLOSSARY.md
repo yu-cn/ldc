@@ -10,6 +10,7 @@
 | **通用核心** | 「每台 Ubuntu/Debian 开发机都需要」的内容，判据决定什么进仓库（ADR-0003） |
 | **可选包组** | 常用但非每台必需的工具清单（如 media-doc）：平铺 `configs/<名>.pkg`，指名安装、装没装由 dpkg 记账，不进断言面（ADR-0010） |
 | **干跑预演（plan）** | 只读投影「重跑会做什么」：OK=已就位 / PLAN=将变更 / SKIP=不适用 / INFO=需手工；与 verify（断言现状）互补，sudo 前先看一眼 |
+| **清单准入对账（audit）** | `ldc audit` 只读对账：①自装未声明（showmanual − 全部 .pkg 并集 − 特殊安装面 gh/docker，滤系统底座）= 准入候选；②已声明未装 = 收敛待办。恒 exit 0，核销语义在 verify |
 | **机器自留地** | 机器私有内容，不入仓库不受移除清单影响；shell 侧的载体是 `~/.bashrc.local` |
 | **`.bashrc.local`** | 机器自留地的 shell 段：首次接管时从原 bashrc 迁移标记块/nvm 块而来，模板最末尾加载、可覆盖模板 |
 | **`.gitconfig.local`** | 机器自留地的 git 段（与 .bashrc.local 同构）：gh 凭据助手等按机配置，模板经 `[include]` 引用 |
@@ -25,6 +26,7 @@
 | **落点映射（dotfiles_map）** | `common.sh` 单一来源的「模板→落点」映射，安装/断言/预演/分流/快照五方共读（对齐 WDC dotfiles-map.ps1） |
 | **渲染（render）** | bootstrap 把模板内容拷贝到落点（覆盖前轮转备份 `.bak`/`.bak.N`，同内容幂等跳过；ADR-0015） |
 | **env.sh** | 机器事实文件 `~/.config/ldc/env.sh`：install-user-tools 安装期探测的工具布局（vp env 脚本、fzf 键位路径），bashrc 模板只 source 它（ADR-0015） |
+| **渲染账本（rendered.sha256）** | `~/.local/state/ldc/rendered.sha256`：上次渲染时各落点的内容指纹（sha256sum 兼容格式，可丢自愈）；`drift_direction` 据此判漂移方向（template-update/machine/both/unknown），纯模板更新重渲染免 .bak（ADR-0015 补注） |
 | **LDC_SMOKE** | 容器冒烟降级开关：身份断言降为存在性检查（占位即过） |
 | **LDC_SKIP_DOCKER** | 跳过 docker 域（CI 容器无 systemd，装了也跑不起来） |
 | **运行锁** | bootstrap 收敛进程持有的 flock 文件锁（`${XDG_RUNTIME_DIR:-/tmp}/ldc-bootstrap-$UID.lock`）：同一时刻只允许一个收敛会话（bootstrap / `ldc sync`），后来者 exit 1 让路；持锁进程崩溃由内核自动释放（ADR-0013） |

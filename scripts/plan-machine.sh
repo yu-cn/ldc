@@ -33,7 +33,11 @@ render_plan() {
             if [ "$mode" = render ] && [ -L "$dst" ]; then
                 pstep "$name" PLAN "将迁移：符号链接（→ $(readlink "$dst" 2>/dev/null || echo '死链')）改渲染拷贝（ADR-0015）"
             elif [ "$mode" = render ]; then
-                pstep "$name" PLAN '将重渲染（当前落点内容先备份 .bak.N；机器侧改动可先 ldc triage 吸收进模板）'
+                if [ "$(drift_direction "$src" "$dst")" = template-update ]; then
+                    pstep "$name" PLAN '将重渲染（模板更新，落点无机器侧改动——直接覆盖）'
+                else
+                    pstep "$name" PLAN '将重渲染（落点当前内容先备份 .bak.N；机器侧改动可先 ldc triage 吸收进模板）'
+                fi
             else
                 pstep "$name" PLAN '将重指符号链接 → 仓库 CLI'
             fi ;;

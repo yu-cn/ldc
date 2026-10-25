@@ -194,6 +194,43 @@ else
     step '落点状态自测（dotfiles_entry_state）' FAIL '状态判定不符预期'
     fail=$((fail + 1))
 fi
+# 渲染账本与方向判定自测（ADR-0015 补注）：set/get 往返、单行覆写、多条目共存、四方向分类——
+# 在 HOME 隔离的子壳里跑（账本路径随 $HOME 展开），不影响真实账本
+rs_home=$(mktemp -d)
+rs_verdict=$(
+    HOME="$rs_home"
+    unset XDG_STATE_HOME
+    ok=1
+    t="$HOME/t"; x="$HOME/x"
+    printf 'v1\n' > "$t"
+    render_state_set "$t" "$(content_hash "$t")"
+    [ "$(render_state_get "$t")" = "$(content_hash "$t")" ] || ok=0
+    printf 'x\n' > "$x"
+    render_state_set "$x" "$(content_hash "$x")"                      # 多条目共存
+    printf 'v2\n' > "$t"
+    render_state_set "$t" "$(content_hash "$t")"                      # 单行覆写
+    [ "$(render_state_get "$x")" = "$(content_hash "$x")" ] || ok=0
+    [ "$(render_state_get "$t")" = "$(content_hash "$t")" ] || ok=0
+    tt="$HOME/tt"; xx="$HOME/xx"
+    printf 'base\n' > "$tt"; printf 'base\n' > "$xx"
+    render_state_set "$xx" "$(content_hash "$xx")"                    # R = hash(base)
+    printf 'new\n' > "$tt"
+    [ "$(drift_direction "$tt" "$xx")" = template-update ] || ok=0    # 落点未动 → 模板更新
+    printf 'base\n' > "$tt"; printf 'hack\n' > "$xx"
+    [ "$(drift_direction "$tt" "$xx")" = machine ] || ok=0            # 模板未动 → 机器侧改动
+    printf 'newer\n' > "$tt"
+    [ "$(drift_direction "$tt" "$xx")" = both ] || ok=0               # 双方都动 → 双向
+    printf 'ghost\n' > "$HOME/gy"
+    [ "$(drift_direction "$tt" "$HOME/gy")" = unknown ] || ok=0       # 无记录 → unknown
+    [ "$ok" -eq 1 ] && echo PASS || echo FAIL
+)
+rm -rf "$rs_home"
+if [ "$rs_verdict" = PASS ]; then
+    step '渲染账本自测（render_state/drift_direction）' OK 'set/get 往返 · 覆写共存 · 四方向分类'
+else
+    step '渲染账本自测（render_state/drift_direction）' FAIL '账本或方向判定不符预期'
+    fail=$((fail + 1))
+fi
 # 落点映射自测：dotfiles_map 引用的每个模板必须真实存在（防映射与仓库漂移）
 map_bad=''
 while IFS='|' read -r _name tmpl _target _gate _mode; do
