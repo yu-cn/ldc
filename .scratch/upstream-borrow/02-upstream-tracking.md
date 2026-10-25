@@ -33,3 +33,4 @@ check-upstream 的全文件正则抓不到 winget 包 ID（要求 X.Y/Z 带斜�
 - [x] 对比报告：基线刚建即「无变化」；新增/移除/我方等价三分支与 wdc 同构；-UpdateBaseline 幂等固化
 - [x] status 30 天提醒逻辑探针：真实账本上 last=2026-10-25、days=0 → OK 档；端到端随 ~/dev/ldc 拉取新版 ldc 即生效
 - [x] validate.sh 全绿（含 shellcheck --severity=warning 实跑）
+- [x] 端到端锚点：~/dev/ldc 拉至 9b96387 后 `ldc status` 实测 `[OK] 上游检查 - 距上次 0 天`

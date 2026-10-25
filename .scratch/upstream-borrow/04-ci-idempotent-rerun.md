@@ -24,3 +24,4 @@ wdc fresh-machine 同款缺口（本轮对标共同发现，两仓可同日双�
 - [x] 冒烟 smoke 腿补第二遍 bootstrap：断言 exit 0 且日志零 `[CHANGED]`（违例 `::error` 显式报出）；工件连带 rerun.log
 - [x] handoff 腿不补重跑（其验收面是交接命令语义，ticket 内容已声明）
 - [ ] CI 实测锚点：推送后手动触发 fresh-container，run id 补记于此
+- [x] CI 实测锚点：run 40177716073（workflow_dispatch 手动触发）三腿全绿——handoff 25s / smoke amd64 1m29s / smoke arm64 1m22s；两腿「幂等确认：第二遍 exit 0 且零 CHANGED」判定行齐备（锁代码在容器路径同批覆盖验证）
