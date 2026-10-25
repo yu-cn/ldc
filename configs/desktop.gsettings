@@ -3,9 +3,9 @@
 # 去噪/隐私/信息密度/渲染质量 opinion 对齐 WDC base-windows 注册表域（ADR-0008 附表）
 # 某 schema 不存在的发行版（如 Debian 无 Ubuntu Dock）该行自动 SKIP
 
-# —— 输入源（中文保底：美式键盘 + ibus 智能拼音；声明完整列表，覆盖机器自定义布局——
-#    特殊布局的机器把这条挪进自留地）——
-org.gnome.desktop.input-sources sources [('xkb', 'us'), ('ibus', 'libpinyin')]
+# —— 输入源（中文保底：美式键盘 + ibus-rime 中州韵引擎，词库走雾凇拼音 ~/.config/ibus/rime 机器自留地——
+#    声明完整列表，覆盖机器自定义布局，特殊布局的机器把这条挪进自留地）——
+org.gnome.desktop.input-sources sources [('xkb', 'us'), ('ibus', 'rime')]
 
 # —— 主题与时钟 ——
 org.gnome.desktop.interface color-scheme 'prefer-dark'

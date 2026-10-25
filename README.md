@@ -64,10 +64,10 @@ Node 归 **vp**（[版本钉 configs](configs/vp-version)，默认跟随 LTS）�
 starship 提示符 · lazygit · JetBrainsMono NF 字体（仅桌面栈机器）
 
 **GNOME 桌面域**（按需启用，[desktop.gsettings](configs/desktop.gsettings)，[ADR-0005](docs/adr/0005-desktop-domain-on-demand.md)）
-暗色主题 · 24h 时钟（含星期几）· 关热角 · 字体渲染 rgba/slight · Nautilus 显示隐藏文件 · 隐私去噪（关最近文件/应用使用记录）· 触摸板轻触 · Ubuntu Dock 点击最小化 · **中文输入源保底**（美式键盘 + ibus 智能拼音）——无桌面会话自动 SKIP；发行版无对应组件的条目自动跳过
+暗色主题 · 24h 时钟（含星期几）· 关热角 · 字体渲染 rgba/slight · Nautilus 显示隐藏文件 · 隐私去噪（关最近文件/应用使用记录）· 触摸板轻触 · Ubuntu Dock 点击最小化 · **中文输入源保底**（美式键盘 + ibus-rime 中州韵，词库走雾凇拼音）——无桌面会话自动 SKIP；发行版无对应组件的条目自动跳过
 
 **桌面应用域**（桌面栈机器启用，[ADR-0008](docs/adr/0008-desktop-apps-domain.md)）
-VSCode（packages.microsoft.com 源）+ [30 个扩展](configs/vscode-extensions.txt)（Python/Jupyter 全家、Remote-SSH/容器、中文语言包等）+ Chrome（dl.google.com 源）+ ibus-libpinyin——双架构对称（两家厂商源均有 arm64/amd64）；扩展清单与 WDC 同名同格式，自装扩展不核销
+VSCode（packages.microsoft.com 源）+ [30 个扩展](configs/vscode-extensions.txt)（Python/Jupyter 全家、Remote-SSH/容器、中文语言包等）+ Chrome（dl.google.com 源）+ ibus-rime——双架构对称（两家厂商源均有 arm64/amd64）；扩展清单与 WDC 同名同格式，自装扩展不核销
 
 **dotfiles**（[dotfiles/](dotfiles/)，符号链接安装，旧文件备份 `*.bak`）
 bashrc（历史/别名/fzf/zoxide/starship + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml · VSCode settings/keybindings（桌面应用域机器）

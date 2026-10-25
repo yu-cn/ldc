@@ -1,7 +1,8 @@
 # desktop-apps.pkg — 桌面应用域（ADR-0008：仅 gsettings 机器启用，headless/WSL/容器自动跳过）
 # VSCode/Chrome 经厂商 apt 源安装（install-packages.sh 配 keyring，与 gh 同款配方）；
 # 双架构对称：两家厂商源均发布 amd64 与 arm64（2026-10 实测）
-# ibus-libpinyin：中文输入保底（GNOME 原生 ibus 框架，Wayland 无坑；配 desktop.gsettings 的输入源声明）
+# ibus-rime：中文输入（GNOME 原生 ibus 框架，Wayland 无坑；配 desktop.gsettings 的输入源声明；
+#   词库走雾凇拼音 rime-ice——git clone --depth 1 https://github.com/iDvel/rime-ice.git ~/.config/ibus/rime，机器自留地不入仓库；2026-10-25 自 libpinyin 换代，ADR-0005 补记）
 code
 google-chrome-stable
-ibus-libpinyin
+ibus-rime
