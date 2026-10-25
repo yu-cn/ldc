@@ -72,10 +72,28 @@ jobs:
           LDC_SKIP_DOCKER: '1'
           LDC_SMOKE: '1'
         run: bash /tmp/ldc/scripts/verify-machine.sh --quick
+      # 幂等证明（工单 upstream-borrow/04；上游 CI 同语义：装完重跑一遍，零变更才算收敛干净）
+      - name: 重跑 bootstrap（幂等证明：第二遍应零变更）
+        env:
+          LDC_SKIP_DOCKER: '1'
+          LDC_SMOKE: '1'
+        run: |
+          set +e
+          bash /tmp/ldc/bootstrap.sh > /tmp/rerun.log 2>&1
+          rc=$?
+          cat /tmp/rerun.log
+          [ "$rc" -eq 0 ] || { echo "::error::第二遍 bootstrap 退出码 $rc（期望 0）"; exit 1; }
+          if grep -q '\[CHANGED\]' /tmp/rerun.log; then
+            echo "::error::第二遍仍有 CHANGED——幂等被破坏"
+            exit 1
+          fi
+          echo "幂等确认：第二遍 exit 0 且零 CHANGED"
       # 成败都带日志回来，判读以日志为准
       - name: 上传 bootstrap 日志（成败都传）
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bootstrap-logs-${{ matrix.arch }}
-          path: /tmp/ldc/logs/
+          path: |
+            /tmp/ldc/logs/
+            /tmp/rerun.log
