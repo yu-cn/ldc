@@ -19,7 +19,7 @@
 curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash
 ```
 
-get.sh 是唯一的远程引导脚本：缺 git/curl 自动 apt 安装 → 定位或 clone 仓库（`~/.ldc` 指针有效则复用，缺省 clone 到 `~/ldc`）→ 直接进入 bootstrap 全流程。`curl | bash` 属于直接执行网络代码——介意可先[审阅 get.sh](scripts/get.sh)再粘贴。偏好手动管理的等价两行（git/curl 需自备，`sudo apt install -y git curl`）：
+get.sh 是唯一的远程引导脚本：缺 git/curl 自动 apt 安装 → 定位或 clone 仓库（`~/.ldc` 指针有效则复用，缺省 clone 到 `~/ldc`）→ 直接进入 bootstrap 全流程。`curl | bash` 属于直接执行网络代码——介意可先[审阅 get.sh](scripts/get.sh)再粘贴；求稳可钉版本：`curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash -s -- <tag>`（clone 后 checkout 该 tag，tag 清单见 GitHub Releases）。偏好手动管理的等价两行（git/curl 需自备，`sudo apt install -y git curl`）：
 
 ```bash
 git clone https://github.com/yu-cn/ldc.git ldc && cd ldc
