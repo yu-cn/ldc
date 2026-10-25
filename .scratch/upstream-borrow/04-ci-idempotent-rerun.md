@@ -18,3 +18,9 @@ wdc fresh-machine 同款缺口（本轮对标共同发现，两仓可同日双�
 
 - [ ] 三腿矩阵含幂等重跑段且全绿
 - [ ] 重跑段失败能在 CI 明确报出（非静默）
+
+## 实录（2026-10-25）
+
+- [x] 冒烟 smoke 腿补第二遍 bootstrap：断言 exit 0 且日志零 `[CHANGED]`（违例 `::error` 显式报出）；工件连带 rerun.log
+- [x] handoff 腿不补重跑（其验收面是交接命令语义，ticket 内容已声明）
+- [ ] CI 实测锚点：推送后手动触发 fresh-container，run id 补记于此

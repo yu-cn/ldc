@@ -20,3 +20,9 @@ clone 之后的部分已被本地 git 钉住，唯一未钉的信任点是 get.s
 - [ ] 零前置一条命令路径不变（缺 git/curl 自动 apt 装语义不动）
 - [ ] 信任模型在 README 可见
 - [ ] validate.sh 全绿
+
+## 实录（2026-10-25）
+
+- [x] get.sh 受 `-s -- <tag>` 传参：fresh clone 后 checkout 该 tag（失败报 Releases 核对指引）；`~/.ldc` 复用路径不受影响；缺省仍跟 main（零前置语义不动）
+- [x] 信任模型入册：脚本头 + README（审阅链接原已存在，补「求稳走 tag 版」句）
+- [x] bash -n / validate 全绿；curl|bash 端到端未实跑（会真装机器——新增仅 clone 后 checkout 一步，语义直读）

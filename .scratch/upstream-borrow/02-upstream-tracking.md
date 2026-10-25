@@ -25,3 +25,11 @@ check-upstream 的全文件正则抓不到 winget 包 ID（要求 X.Y/Z 带斜�
 - [ ] check-upstream.sh 只读可跑，报告可读；基线固化幂等
 - [ ] 账本首行记录本工单（建立基线）
 - [ ] validate.sh 全绿
+
+## 实录（2026-10-25）
+
+- [x] 真源提取实证：`COMFORT_APT_REQUIRED`(12) + `COMFORT_APT_OPTIONAL`(3) = 15 包；基线固化 docs/upstream-baseline.json（上游 HEAD fb564611cf）
+- [x] 提取坑入档：OPTIONAL 是单行数组，sed 范围式 `/^)/` 匹配不到闭括号会把范围吸到文件尾（实测抓出 1023 个「包」）——改 awk 按数组名截取（坑注在脚本内）
+- [x] 对比报告：基线刚建即「无变化」；新增/移除/我方等价三分支与 wdc 同构；-UpdateBaseline 幂等固化
+- [x] status 30 天提醒逻辑探针：真实账本上 last=2026-10-25、days=0 → OK 档；端到端随 ~/dev/ldc 拉取新版 ldc 即生效
+- [x] validate.sh 全绿（含 shellcheck --severity=warning 实跑）
