@@ -16,6 +16,18 @@ main() {
     local smoke=0
     [ "${LDC_SMOKE:-0}" = "1" ] && smoke=1
 
+    # 运行锁（GLOSSARY「运行锁」；ADR-0013，wdc 0ad0788 同思想）：flock 抢占式，防两个收敛
+    # 会话并发踩 apt/下载事务。内核语义兜底崩溃释放；只读入口（status/verify/plan/triage）不取锁
+    local lock_file="${XDG_RUNTIME_DIR:-/tmp}/ldc-bootstrap-$UID.lock"
+    if ! exec 9>"$lock_file" 2>/dev/null; then
+        step '运行锁' FAIL "锁文件不可写：$lock_file"
+        return 1
+    fi
+    if ! flock -n 9; then
+        step '运行锁' FAIL '已有一次收敛在跑——等它结束再跑（本次退出）'
+        return 1
+    fi
+
     phase '1/7 · 预检'
     if [ ! -r /etc/os-release ]; then
         step '操作系统' FAIL '缺 /etc/os-release（非 Ubuntu/Debian？）'

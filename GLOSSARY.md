@@ -24,3 +24,4 @@
 | **防写穿断言** | verify 的「dotfiles 与 HEAD 一致」检查；仓库无 commit 时降级为 INFO |
 | **LDC_SMOKE** | 容器冒烟降级开关：身份断言降为存在性检查（占位即过） |
 | **LDC_SKIP_DOCKER** | 跳过 docker 域（CI 容器无 systemd，装了也跑不起来） |
+| **运行锁** | bootstrap 收敛进程持有的 flock 文件锁（`${XDG_RUNTIME_DIR:-/tmp}/ldc-bootstrap-$UID.lock`）：同一时刻只允许一个收敛会话（bootstrap / `ldc sync`），后来者 exit 1 让路；持锁进程崩溃由内核自动释放（ADR-0013） |
