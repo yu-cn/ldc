@@ -4,12 +4,14 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] get.sh：LDC_REPO / LDC_TAG；README fork 段与求稳行同步
 - [x] CI：dev-standard-guard 工作流（每周 + 手动 dispatch，去 CR 归一比对姊妹仓 WDC）
 - [x] dev-standard §5：双仓版本对齐一行（主作者位本仓先改，WDC 同步拷贝随其工单38）
 - [x] CHANGELOG Unreleased 记账
-- [ ] CI 绿锚点回填（validate / dev-standard-guard）
+- [x] CI 绿锚点回填（validate / dev-standard-guard）
 
 ## Comments
+
+- 2026-10-26（LETH 会话，CI 锚点）：push 后 validate 绿 run 40351916163（3e90a65）；dev-standard-guard 手动 dispatch 首跑绿 run 40352203611（8s）——本仓拷贝与姊妹仓 WDC main 逐字一致（含 §5 新条）实证，WDC 侧对跑 40352211960 同绿。
