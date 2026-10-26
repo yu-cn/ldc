@@ -3,15 +3,16 @@
 # 用法（新机器一条命令）：
 #   curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash            # 跟 main
 #   curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash -s -- v0.4.0  # 钉 tag（clone 后 checkout）
-# 信任模型：curl | bash 属直接执行网络代码——介意可先 curl 单看本文件再管（审阅后手动路径见 README）；
-# 求稳走 tag 版（clone 后 checkout 该 tag；仅作用于 fresh clone，~/.ldc 复用路径不受影响）
+# 环境变量（钉 tag 与位置参数同义；仓库覆盖供 fork 用户——对齐 WDC get.ps1 的 env 口径）：
+#   LDC_TAG=v0.4.0    钉 tag（仅作用于 fresh clone，~/.ldc 复用路径不受影响）
+#   LDC_REPO=https://github.com/<你>/ldc.git    fork 用户引导自己的仓库，不必走手动 clone 路径
+# 信任模型：curl | bash 属直接执行网络代码——介意可先 curl 单看本文件再管（审阅后手动路径见 README）
 # 职责：缺 git/curl 则 apt 安装（sudo；需密码就地询问）→ 定位或 clone 仓库 → bash bootstrap.sh
-# fork 用户：本文件写死上游地址——fork 后走 README 的手动 clone 路径，或把地址改成你的仓库
 set -uo pipefail
 
-REPO_URL="https://github.com/yu-cn/ldc.git"
+REPO_URL="${LDC_REPO:-https://github.com/yu-cn/ldc.git}"
 DEFAULT_DIR="$HOME/ldc"
-REF="${1:-}"   # 可选：tag 名；fresh clone 后 checkout（空 = 跟 main）
+REF="${LDC_TAG:-${1:-}}"   # 可选：tag 名（LDC_TAG 或位置参数）；fresh clone 后 checkout（空 = 跟 main）
 
 log() { printf '[get] %s\n' "$*"; }
 

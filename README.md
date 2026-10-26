@@ -31,7 +31,7 @@ git clone https://github.com/yu-cn/ldc.git ldc && cd ldc
 bash bootstrap.sh
 ```
 
-fork 改造成自己环境的用户把手动路径的 clone 地址换成你的仓库即可（get.sh 写死上游地址，fork 用户走手动路径或自行改地址）——`ldc sync` 跟随你 clone 的远端；直接使用者保持上面的地址，`ldc sync` 一键跟进上游演进。
+fork 改造成自己环境的用户在引导命令前设 `LDC_REPO` 指向自己的仓库（`LDC_REPO=https://github.com/<你>/ldc.git curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash`，同样一条命令），或把手动路径的 clone 地址换成你的仓库——`ldc sync` 跟随你 clone 的远端；直接使用者保持上面的地址，`ldc sync` 一键跟进上游演进。
 
 七阶段：预检 → 无副作用校验 → root 阶段 → user 工具 → 桌面 → dotfiles → 汇总，全程日志落 `logs/bootstrap-<时间戳>.log`。重跑幂等：已就位的全部跳过。收敛完成后验收：`bash scripts/verify-machine.sh`（全绿即与声明一致）。
 
