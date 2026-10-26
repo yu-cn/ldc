@@ -35,6 +35,9 @@ jobs:
           [ "$rc" -eq 2 ] || { echo "::error::期望 exit 2（交接待办），实际 $rc"; exit 1; }
           grep -q 'root 阶段交接' /tmp/boot.log || { echo "::error::未见交接命令块"; exit 1; }
           grep -q 'sudo bash scripts/install-packages.sh' /tmp/boot.log || { echo "::error::交接命令内容不符"; exit 1; }
+          # LDC_TODO 机器标记（ADR-0007 委托契约，2026-10-26）：生产侧活测试——WDC setup-ubuntu.sh
+          # 按此字面量判定 exit 2 语义，本断言防契约标记静默漂移
+          grep -q 'LDC_TODO=root-handoff' /tmp/boot.log || { echo "::error::未见 LDC_TODO 机器标记（委托契约）"; exit 1; }
       - name: 上传交接路径日志
         if: always()
         uses: actions/upload-artifact@v4

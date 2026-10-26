@@ -28,5 +28,6 @@
 | **env.sh** | 机器事实文件 `~/.config/ldc/env.sh`：install-user-tools 安装期探测的工具布局（vp env 脚本、fzf 键位路径），bashrc 模板只 source 它（ADR-0015） |
 | **渲染账本（rendered.sha256）** | `~/.local/state/ldc/rendered.sha256`：上次渲染时各落点的内容指纹（sha256sum 兼容格式，可丢自愈）；`drift_direction` 据此判漂移方向（template-update/machine/both/unknown），纯模板更新重渲染免 .bak（ADR-0015 补注） |
 | **LDC_SMOKE** | 容器冒烟降级开关：身份断言降为存在性检查（占位即过） |
+| **LDC_TODO** | bootstrap exit 2 待办明细行尾的机器标记 `[LDC_TODO=tag]`（root-handoff / desktop / git-identity）：委托方 WDC 按标记判定语义，字面量属委托契约、变更同日双改（ADR-0007） |
 | **LDC_SKIP_DOCKER** | 跳过 docker 域（CI 容器无 systemd，装了也跑不起来） |
 | **运行锁** | bootstrap 收敛进程持有的 flock 文件锁（`${XDG_RUNTIME_DIR:-/tmp}/ldc-bootstrap-$UID.lock`）：同一时刻只允许一个收敛会话（bootstrap / `ldc sync`），后来者 exit 1 让路；持锁进程崩溃由内核自动释放（ADR-0013） |

@@ -21,3 +21,9 @@ LDC 与 [WDC](https://github.com/yu-cn/wdc) 是同一主人的关联项目（本
 - 该边单向（WDC→LDC）：Ubuntu 收敛按单一来源原则只在 LDC——对等指地位与治理对称，不是调用对称。
 - 主作者位澄清：dotfiles/linux 与 dev-standard 的「主作者位在 LDC」是单一来源防漂移机制，与项目地位无关。
 - 禁用「引擎 / 编排者 / 上下级」类隐喻；「委托契约」措辞只描述调用机制本身（哪个入口调哪个脚本），不隐含隶属。
+
+**exit 2 语义契约机器化**（补记 2026-10-26，主人批准「按建议来」——起因：WDC setup-ubuntu.sh 曾以 grep 匹配本仓 bootstrap 散文文案（「桌面域：登录」「root 阶段：cd」「git 身份：编辑」）分类 exit 2，属两仓间无守护的字符串契约，任何一侧文案微调即静默失效）：
+
+- bootstrap exit 2 的每条待办明细行尾追加机器标记 `[LDC_TODO=tag]`：`root-handoff` / `desktop` / `git-identity`。**标记字面量属委托契约**——变更须与 WDC `scripts/wsl/setup-ubuntu.sh` 同日双改；新增待办类别必须配新标记。
+- WDC 侧判定改按标记、且取**严格形态**：待办集合恰为 `{desktop}` 才按「WSL 形态预期」容忍为完成；出现任何未知标记（本仓未来新增类别而 WDC 未跟进）一律按真问题浮出——宁可误红不可静默吞待办。
+- 生产侧活测试：fresh-container.yml 的 handoff job 断言 `LDC_TODO=root-handoff` 在位（交接路径 exit 2 实跑），防契约标记静默漂移。

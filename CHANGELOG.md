@@ -6,6 +6,9 @@
 
 ## [Unreleased]
 
+### Changed
+- bootstrap exit 2 的待办明细行尾追加机器标记 `[LDC_TODO=tag]`（root-handoff / desktop / git-identity）——委托方 WDC 的 WSL 阶段改按标记判定待办语义，退役散文文案 grep（委托契约增补，[LDC ADR-0007 补记](docs/adr/0007-wdc-ldc-coordination.md)）；人类可读待办文案不变
+
 ## [0.7.0] – 2026-10-26
 
 ### Added

@@ -2,7 +2,9 @@
 # shellcheck disable=SC2088  # 标签文案中的 ~/ 是显示约定不参与展开；真实路径展开一律用 $HOME
 # bootstrap.sh — LDC 开发环境唯一入口（GLOSSARY: bootstrap）
 # 阶段：预检 → 无副作用校验 → root 阶段(或交接) → user 工具 → 桌面 → dotfiles(渲染拷贝) → 汇总
-# 退出码：0 = 全部就绪；1 = 有 FAIL；2 = 有待办手工步骤（root 交接 / 身份未填 / 桌面待登录重跑）
+# 退出码：0 = 全部就绪；1 = 有 FAIL；2 = 有待办手工步骤（root 交接 / 身份未填 / 桌面待登录重跑）；
+#         exit 2 的待办明细行尾带 [LDC_TODO=tag] 机器标记——委托方 WDC 解析用（GLOSSARY「LDC_TODO」，
+#         ADR-0007 委托契约：标记字面量变更须与 WDC scripts/wsl/setup-ubuntu.sh 同日双改）
 # 环境：LDC_SKIP_DOCKER=1 跳过 docker 域（CI 冒烟）；全程日志 tee 到 logs/bootstrap-<时间戳>.log
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -133,10 +135,13 @@ main() {
             printf '    %s\n' "$handoff"
             echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
         fi
+        # 待办明细行尾的 [LDC_TODO=tag] 是委托契约（ADR-0007 补记 2026-10-26）：WDC 的
+        # setup-ubuntu.sh 按标记而非散文文案判定 exit 2 语义——标记字面量属契约，变更同日双改；
+        # 新增待办类别必须配新标记（委托方未知标记按「真问题」浮出，不静默容忍）
         echo '── 待办手工步骤 ──'
-        [ -n "$handoff" ] && printf '  · root 阶段：%s\n' "$handoff"
-        [ "$desktop_pending" -eq 1 ] && echo '  · 桌面域：登录 GNOME 桌面会话后重跑 bash bootstrap.sh（应用 gsettings）'
-        git_identity_ok || echo '  · git 身份：编辑 ~/.gitidentity 填本机 name/email，然后 git add -A && git commit -m "Initial LDC scaffold"'
+        [ -n "$handoff" ] && printf '  · root 阶段：%s [LDC_TODO=root-handoff]\n' "$handoff"
+        [ "$desktop_pending" -eq 1 ] && echo '  · 桌面域：登录 GNOME 桌面会话后重跑 bash bootstrap.sh（应用 gsettings） [LDC_TODO=desktop]'
+        git_identity_ok || echo '  · git 身份：编辑 ~/.gitidentity 填本机 name/email，然后 git add -A && git commit -m "Initial LDC scaffold" [LDC_TODO=git-identity]'
         return 2
     fi
     step 'bootstrap' OK '全部阶段完成——机器与声明一致'
