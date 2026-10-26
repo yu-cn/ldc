@@ -6,13 +6,15 @@
 
 ## [Unreleased]
 
+## [0.8.0] – 2026-10-27
+
 ### Added
 - get.sh 支持 `LDC_REPO` 覆盖引导地址（fork 用户一条命令对齐手动路径）与 `LDC_TAG` env 钉版（与位置参数同义，对齐 WDC get.ps1 的 env 口径）
 - CI 新增 dev-standard-guard 双仓同源守护工作流：每周拉姊妹仓 WDC 的 `docs/dev-standard.md` 去 CR 归一比对，漂移即红（主作者位在本仓；刻意不挂 push——双仓协同编辑必有先后，瞬时红污染 badge）
 
 ### Changed
 - bootstrap exit 2 的待办明细行尾追加机器标记 `[LDC_TODO=tag]`（root-handoff / desktop / git-identity）——委托方 WDC 的 WSL 阶段改按标记判定待办语义，退役散文文案 grep（委托契约增补，[LDC ADR-0007 补记](docs/adr/0007-wdc-ldc-coordination.md)）；人类可读待办文案不变
-- dev-standard §5 补「双仓版本对齐」约定：双仓联动变更（委托契约 / 同源规范 / 同值钉子）发版时两仓版本号对齐收口（LDC_TODO 契约两仓同批积压 `[Unreleased]` 的实录定规矩）
+- dev-standard §5 补「双仓版本对齐」约定：双仓联动变更（委托契约 / 同源规范 / 同值钉子）发版时两仓版本号对齐收口（LDC_TODO 契约两仓同批积压 `[Unreleased]` 的实录定规矩）——本版与 WDC v0.8.0 同号同日为首次执行
 
 ## [0.7.0] – 2026-10-26
 
@@ -65,7 +67,8 @@
 ### Added
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
-[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/yu-cn/ldc/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/yu-cn/ldc/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/yu-cn/ldc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/yu-cn/ldc/compare/v0.4.0...v0.5.0
