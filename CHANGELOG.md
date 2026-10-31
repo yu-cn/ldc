@@ -10,6 +10,7 @@
 ### Added
 - WSL 剪贴板/open 垫片：bashrc 模板 `clip.exe`/`explorer.exe` 探测门控段——pbcopy/pbpaste/open（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md)，上游 WSL Comfort 同款件的 LDC 形态）
 - `configs/mise-version`、`configs/uv-version` 双钉（哈希自官方 release 资产实算/侧车对齐，ADR-0011）
+- VSCode 扩展清单补 fss/ZCode 上游推荐三件（better-comments / mermaid-preview / tailwindcss）——vite-plus 扩展包退役零损失核实（联动 wdc 工单39）
 
 ## [0.8.0] – 2026-10-27
 
