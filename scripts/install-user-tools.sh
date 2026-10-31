@@ -111,12 +111,15 @@ fi
 # 默认环境 node@lts（对齐原 vp env default lts 语义——每次收敛重发即随最新 LTS，零维护）；
 # ensure 型步骤报 OK 不报 CHANGED（对齐 vp env install 旧例）：幂等重跑零 [CHANGED] 基线由本体安装行承担
 if [ -x "$mise_bin" ]; then
-    if "$mise_bin" use -g node@lts >/dev/null 2>&1; then
+    mise_out=$(mktemp)
+    if "$mise_bin" use -g node@lts >"$mise_out" 2>&1; then
         step 'mise 默认 node（lts）' OK '已确保就位（shims：~/.local/share/mise/shims）'
     else
-        step 'mise 默认 node（lts）' FAIL
+        # FAIL 带错误尾证（冒烟实录：吞输出致 amd64 瞬态无诊断面）
+        step 'mise 默认 node（lts）' FAIL "$(tail -n 3 "$mise_out" | tr '\n' ' ')"
         fail=$((fail + 1))
     fi
+    rm -f "$mise_out"
 fi
 
 phase 'user 工具 · starship'
