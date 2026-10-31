@@ -14,7 +14,7 @@
 - [ ] ⑥ verify / plan / common / validate 换面
 - [ ] ⑦ VSCode 清单去 vite-plus 扩展包
 - [ ] ⑧ AGENTS / GLOSSARY / dev-standard 三处成文
-- [ ] ⑨ README / demo 重录
+- [x] ⑨ README / demo 重录
 - [ ] ⑩ 本机 WSL 真机验收（bootstrap 收敛、vp 消失、mise+node@lts+uv 就位）+ CI 双架构绿 + v0.9.0 同日发版（联动 WDC 工单39）
 
 ## Comments
@@ -25,3 +25,4 @@
 - 2026-10-31（ASUS 会话，CI 锚点）：实现提交 80c1e5a push 后 validate 绿 run 41207518817；fresh-container 冒烟已触发 run 41208421488（结论收口时回填）。
 - 2026-10-31（ASUS 会话，冒烟连环修复实录）：fresh-container 首跑红（41208421488）——mise 默认 node 在 amd64 handoff 腿 FAIL 且无诊断面（脚本吞了输出）→ 补 FAIL 错误尾证（c6e2798）；二跑（41209046843）露真因：node（mise backend x64 官方构建）链接 libatomic.so.1，最小容器缺库 → base-linux 补 libatomic1（05b42d6）；三跑（41209239555）仍红——handoff 腿本就不给 root（交接路径测试），root 未跑则 libatomic 无从落位，属交接前合法中间态 → mise 默认 node 步骤按交接语义降级 INFO 待办（libatomic 缺且 use 失败时不计 FAIL，交接后重跑即装）。四跑验证中。
 - 2026-10-31（ASUS 会话，冒烟绿收口）：fresh-container 四跑 GREEN（41209456455，libatomic1 + handoff INFO 降级后）；姊妹仓 fresh-machine 四跑 GREEN（41212167402，其 mise Links/strict 连环修复实录见 wdc 工单39）。VSCode 清单补上游推荐三件（1eab610）。剩余：demo 重录（⑨）、v0.9.0 同日发版（⑩，待主人指令）。
+- 2026-10-31（ASUS 会话，发版收口）：主人指令「发布 v0.9.0」——demo 重录（cast 真实输出重生成 + agg v1.9.0 重转 GIF，9124d93）→ CHANGELOG 收节（2faf89e，validate 41215160577 绿）→ tag v0.9.0（锚定 2faf89e）→ [release](https://github.com/yu-cn/ldc/releases/tag/v0.9.0)（--latest，四段笔记）。**与 wdc v0.9.0 同号同日**（§5 双仓版本对齐第二次执行）。本单全项收口。
