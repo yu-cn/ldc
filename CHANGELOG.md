@@ -5,8 +5,12 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)（显著变更人为记录、分类归档、每个版本可跳转）；版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
 
 ## [Unreleased]
+
+## [0.9.0] – 2026-10-31
+
 ### Changed
 - **破坏性**：语言管理器 vp 退役、mise 升正（[ADR-0016](docs/adr/0016-vp-retire-mise-takeover.md)）——`install-user-tools.sh` 的 vp 安装/env 编排块换 mise（GitHub release + sha256 双钉、双架构经 `ldc_arch()`）+ `mise use -g node@lts` 默认环境；存量机一次性迁移豁免（探测到 vp 即按其安装器写入面反向清除，「只装不删」红线显式例外）；uv 从官方 curl|sh 升 release+sha256 双钉（ADR-0011）；env.sh 事实文件收缩为 fzf 面（mise/uv 布局固定、直接在 bashrc 模板声明）；verify/plan/validate 断言与投影换面；VSCode 清单去 `voidzero.vite-plus-extension-pack`；AGENTS 红线1、GLOSSARY、README 同步；dev-standard §6 钉子同值标注「当前无实例」（本仓主笔，WDC 拷贝随其工单39）
+- README 首屏演示重录——换轨后真实输出（plan/verify mise 钉子行），agg v1.9.0 重转 GIF
 ### Added
 - WSL 剪贴板/open 垫片：bashrc 模板 `clip.exe`/`explorer.exe` 探测门控段——pbcopy/pbpaste/open（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md)，上游 WSL Comfort 同款件的 LDC 形态）
 - `configs/mise-version`、`configs/uv-version` 双钉（哈希自官方 release 资产实算/侧车对齐，ADR-0011）
@@ -74,6 +78,7 @@
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
 [Unreleased]: https://github.com/yu-cn/ldc/compare/v0.8.0...HEAD
+[0.9.0]: https://github.com/yu-cn/ldc/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yu-cn/ldc/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/yu-cn/ldc/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/yu-cn/ldc/compare/v0.5.0...v0.6.0
