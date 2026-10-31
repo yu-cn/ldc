@@ -72,7 +72,7 @@ else
     step 'configs/vscode-extensions.txt' FAIL "应为 publisher.name 格式：$(printf '%s' "$ext_bad" | head -n 1)"
     fail=$((fail + 1))
 fi
-for v in vp-version lazygit-version nerd-fonts-version; do
+for v in mise-version uv-version lazygit-version nerd-fonts-version; do
     val=$(head -n1 "$ROOT/configs/$v" | tr -d '[:space:]')
     if [[ $val =~ ^[A-Za-z0-9][A-Za-z0-9.]*$ ]]; then
         # ADR-0011：sha256 行（若有）格式——`sha256 <hex>` 或 `sha256 amd64|arm64 <hex>`
@@ -111,7 +111,7 @@ else
 fi
 # version_matches 边界：钉子不得误配更长数字段（1.3.0 ≠ 11.3.0）
 vm_ok=1
-version_matches 'vp 1.3.0 (commit abc)' '1.3.0' || vm_ok=0
+version_matches 'mise 2026.10.25 (commit abc)' '2026.10.25' || vm_ok=0
 version_matches 'lazygit version=0.66.2, d1a2b3' '0.66.2' || vm_ok=0
 if version_matches 'uv 11.3.0' '1.3.0'; then vm_ok=0; fi
 if version_matches 'starship 1.27.10' '1.27.0'; then vm_ok=0; fi
@@ -243,7 +243,7 @@ else
     fail=$((fail + 1))
 fi
 # bashrc 事实外置契约自测（ADR-0015）：模板只经 env.sh 取工具布局事实——不得再硬编码
-# vp env 候选路径 / fzf 示例路径（上游换布局只改安装器，改回来即违约）
+# vp env 候选路径（vp 已退役，防回潮）/ fzf 示例路径（上游换布局只改安装器，改回来即违约）
 br_ok=1
 grep -q '.config/ldc/env.sh' "$ROOT/dotfiles/linux/bashrc" || br_ok=0
 grep -q 'vite-plus/env' "$ROOT/dotfiles/linux/bashrc" && br_ok=0

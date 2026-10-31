@@ -131,38 +131,8 @@ sudo_probe() {
     else printf 'interactive\n'; fi
 }
 
-vp_bin_path() {
-    # vp 二进制显式路径探测（非登录 shell 的 PATH 看不到它；两种官方布局都认——对齐 WDC 工单12）
-    local d
-    for d in "$HOME/.vite-plus/bin/vp" "$HOME/.local/share/vite-plus/bin/vp"; do
-        if [ -x "$d" ]; then printf '%s\n' "$d"; return 0; fi
-    done
-    return 1
-}
 
-vp_env_script() {
-    # vp env 脚本路径探测（安装器布局随版本变动，逐个尝试——对齐 WDC 工单12）：
-    # 首个在位者输出路径并返回 0；全缺返回 1。install-user-tools 据此写机器事实文件 env.sh（ADR-0015）
-    local d
-    for d in "$HOME/.config/vite-plus/env" "$HOME/.local/share/vite-plus/env.sh" \
-             "$HOME/.local/share/vite-plus/env" "$HOME/.vite-plus/env"; do
-        [ -f "$d" ] && { printf '%s\n' "$d"; return 0; }
-    done
-    return 1
-}
 
-node_available() {
-    # node 可用性（效果级，ADR-0003 nvm/vp 共存）：PATH 直见，或经 vp env 脚本激活后可见
-    # （布局探测单一来源 vp_env_script），或 nvm 目录在位
-    command -v node >/dev/null 2>&1 && return 0
-    local e
-    if e=$(vp_env_script); then
-        # shellcheck disable=SC1090
-        . "$e" >/dev/null 2>&1 || true
-        command -v node >/dev/null 2>&1 && return 0
-    fi
-    ls "$HOME"/.nvm/versions/node/*/bin/node >/dev/null 2>&1
-}
 
 version_matches() {
     # version_matches <命令输出> <期望版本> —— 语义化包含匹配，且避免 1.3.0 误配 11.3.0
@@ -357,4 +327,10 @@ docker_daemon_declared_ok() {
     declared="$(ldc_repo)/configs/docker-daemon.json"
     [ -f "$f" ] || return 1
     jq -s -e '.[0] * .[1] == .[0]' "$f" "$declared" >/dev/null 2>&1
+}
+node_available() {
+    # node 可用性（效果级，ADR-0003 nvm/mise 共存）：PATH 直见，或 mise shims 在位，或 nvm 目录在位
+    command -v node >/dev/null 2>&1 && return 0
+    [ -x "$HOME/.local/share/mise/shims/node" ] && return 0
+    ls "$HOME"/.nvm/versions/node/*/bin/node >/dev/null 2>&1
 }

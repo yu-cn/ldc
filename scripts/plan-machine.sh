@@ -126,26 +126,25 @@ else
     pstep 'docker 组' PLAN '将把调用用户加入 docker 组（重新登录生效）'
 fi
 
-phase '4/6 · user 工具（uv / vp / starship / lazygit / 字体 / 扩展）'
+phase '4/6 · user 工具（uv / mise / starship / lazygit / 字体 / 扩展）'
+UV_VERSION="$(pin_of uv-version)" || exit 1
 uv_bin="$HOME/.local/bin/uv"
-if [ -x "$uv_bin" ]; then
-    pstep uv OK "已装（$("$uv_bin" --version 2>/dev/null | head -n1)）"
+if [ -x "$uv_bin" ] && version_matches "$("$uv_bin" --version 2>/dev/null || true)" "$UV_VERSION"; then
+    pstep uv OK "= 钉子 $UV_VERSION"
 else
-    pstep uv PLAN '将官方安装器安装'
+    pstep uv PLAN "将安装/升级到钉子 $UV_VERSION"
 fi
-VP_VERSION="$(pin_of vp-version)" || exit 1
-vp_bin="$(vp_bin_path || true)"
-if [ -z "$vp_bin" ]; then
-    pstep vp PLAN "将安装钉子 $VP_VERSION（官方安装器）"
-elif version_matches "$("$vp_bin" --version 2>/dev/null)" "$VP_VERSION"; then
-    pstep vp OK "= 钉子 $VP_VERSION"
+MISE_VERSION="$(pin_of mise-version)" || exit 1
+mise_bin="$HOME/.local/bin/mise"
+if [ -x "$mise_bin" ] && version_matches "$("$mise_bin" --version 2>/dev/null || true)" "$MISE_VERSION"; then
+    pstep mise OK "= 钉子 $MISE_VERSION"
 else
-    pstep vp PLAN "将收敛到钉子 $VP_VERSION"
+    pstep mise PLAN "将安装/升级到钉子 $MISE_VERSION"
 fi
 if node_available; then
     pstep node OK '可用'
 else
-    pstep node PLAN '将经 vp env 安装 LTS'
+    pstep node PLAN '将经 mise 安装 LTS'
 fi
 SS_VERSION="$(pin_of starship-version)" || exit 1
 ss_bin="$HOME/.local/bin/starship"

@@ -92,7 +92,7 @@ main() {
             ;;
     esac
 
-    phase '4/7 · user 工具（uv / vp / starship / lazygit / 字体）'
+    phase '4/7 · user 工具（uv / mise / starship / lazygit / 字体）'
     run_stage 'user 工具' "$ROOT/scripts/install-user-tools.sh" || fails=$((fails + 1))
 
     phase '5/7 · 桌面域（gsettings）'

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # install-user-tools.sh — user 阶段工具（全部用户级、免 sudo）：
-#   uv（跳过已装）/ vp（钉 configs/vp-version）/ starship / lazygit（钉 configs/lazygit-version）
+#   vp 退役迁移（一次性豁免，ADR-0016）/ uv / mise（钉 configs/*-version，管 Node 等语言）
+#   / starship / lazygit（钉 configs/lazygit-version）
 #   / JetBrainsMono NF 字体（钉 configs/nerd-fonts-version；仅 gsettings 机器装）
 # nvm 共存政策（ADR-0003）：不卸 nvm、不碰其块——它是机器自留地；本机 node 归属以 .bashrc.local 后加载胜出
 set -uo pipefail
@@ -8,52 +9,112 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 fail=0
+mkdir -p "$HOME/.local/bin"
 
-phase 'user 工具 · uv（管 Python）'
-if [ -x "$HOME/.local/bin/uv" ]; then
-    step uv SKIP "已装（$("$HOME/.local/bin/uv" --version 2>/dev/null | head -n1)）"
-elif curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null; then
-    step uv OK '官方安装器'
+phase 'user 工具 · uv（管 Python，钉子安装）'
+UV_VERSION="$(pin_of uv-version)" || exit 1
+uv_bin="$HOME/.local/bin/uv"
+uv_current="$("$uv_bin" --version 2>/dev/null || true)"
+if [ -x "$uv_bin" ] && version_matches "$uv_current" "$UV_VERSION"; then
+    step uv SKIP "= 钉子 $UV_VERSION"
 else
-    step uv FAIL '安装器执行失败'
-    fail=$((fail + 1))
+    arch="$(ldc_arch)" || fail=$((fail + 1))
+    if [ -n "${arch:-}" ]; then
+        # uv 资产命名例外（rust triple）：amd64→x86_64-unknown-linux-gnu，arm64→aarch64-unknown-linux-gnu
+        case $arch in
+            amd64) uv_asset=x86_64-unknown-linux-gnu ;;
+            arm64) uv_asset=aarch64-unknown-linux-gnu ;;
+        esac
+        url="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${uv_asset}.tar.gz"
+        tmp=$(mktemp -d)
+        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011；哈希与官方 .sha256 侧车文件一致）再解压安装
+        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
+            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
+            want="$(pin_sha256 uv-version "$arch" || true)"
+            if [ -n "$want" ] && [ "$got" != "$want" ]; then
+                step 'uv 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
+                fail=$((fail + 1))
+            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null \
+                 && install -m 0755 "$tmp/uv-${uv_asset}/uv" "$uv_bin" \
+                 && install -m 0755 "$tmp/uv-${uv_asset}/uvx" "$HOME/.local/bin/uvx"; then
+                [ -z "$want" ] && step 'uv 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
+                if [ -n "$uv_current" ]; then step uv CHANGED "升级 → $UV_VERSION（$uv_bin）"
+                else step uv OK "$UV_VERSION → $uv_bin"; fi
+            else
+                step uv FAIL "解压/安装失败（$url）"
+                fail=$((fail + 1))
+            fi
+        else
+            step uv FAIL "下载失败（$url）"
+            fail=$((fail + 1))
+        fi
+        rm -rf "$tmp"
+    fi
 fi
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 
-phase 'user 工具 · vp（管 Node）'
-VP_VERSION="$(pin_of vp-version)" || exit 1
-vp_bin="$(vp_bin_path || true)"
-if [ -z "$vp_bin" ]; then
-    # 官方给的是 |sh，但其安装脚本含 bash 语法——Ubuntu 的 sh=dash 会 Bad substitution，必须 |bash
-    export VP_VERSION
-    if curl -fsSL https://vite.plus/sh | bash >/dev/null; then
-        vp_bin="$(vp_bin_path || true)"
-        [ -n "$vp_bin" ] && step vp OK "已装 $VP_VERSION（官方安装器，钉子）" || { step vp FAIL '安装器执行后仍未找到二进制'; fail=$((fail + 1)); }
-    else
-        step vp FAIL '安装器执行失败'
-        fail=$((fail + 1))
-    fi
-elif version_matches "$("$vp_bin" --version 2>/dev/null)" "$VP_VERSION"; then
-    step vp SKIP "= 钉子 $VP_VERSION"
+phase 'user 工具 · vp 退役迁移（ADR-0016 一次性豁免）'
+# 「只装不删」红线的显式例外：vp→mise 属迁移冲突——vp env on 的 shims 不撤会与 mise PATH 打架，
+# 非自留地（自留地不碰不变）。官方未提供卸载命令（安装器无 uninstall 面、CLI 无 self 子命令），
+# 按安装器写入面反向清除：安装目录 + ~/.profile 标记行（env.sh 事实文件由本脚本末段重写、自然去 vp）。
+vp_cleaned=0
+for d in "$HOME/.vite-plus" "$HOME/.local/share/vite-plus" "$HOME/.cache/vite-plus"; do
+    [ -e "$d" ] && { rm -rf "$d"; vp_cleaned=1; }
+done
+if [ -f "$HOME/.profile" ] && grep -q 'Vite+ bin' "$HOME/.profile"; then
+    # 精确删安装器写入的标记行与其紧随的 source 行，其余内容一概不碰
+    sed -i '/# Vite+ bin (https:\/\/viteplus.dev)/{N;d}' "$HOME/.profile"
+    vp_cleaned=1
+fi
+if [ "$vp_cleaned" -eq 1 ]; then
+    step vp CHANGED '已退役清除（→ mise，ADR-0016 迁移豁免）'
 else
-    # 版本漂移：重跑钉子安装器收敛（幂等收敛到声明状态）
-    export VP_VERSION
-    if curl -fsSL https://vite.plus/sh | bash >/dev/null; then
-        step vp CHANGED "收敛到钉子 $VP_VERSION"
-    else
-        step vp FAIL "收敛到 $VP_VERSION 失败"
-        fail=$((fail + 1))
+    step vp SKIP '不在位（新机或已清）'
+fi
+
+phase 'user 工具 · mise（管 Node 等语言）'
+MISE_VERSION="$(pin_of mise-version)" || exit 1
+mise_bin="$HOME/.local/bin/mise"
+mise_current="$("$mise_bin" --version 2>/dev/null || true)"
+if [ -x "$mise_bin" ] && version_matches "$mise_current" "$MISE_VERSION"; then
+    step mise SKIP "= 钉子 $MISE_VERSION"
+else
+    arch="$(ldc_arch)" || fail=$((fail + 1))
+    if [ -n "${arch:-}" ]; then
+        # mise 资产命名例外：amd64→x64（GitHub release 段名；arm64 同名无例外）
+        mise_arch=$arch
+        [ "$mise_arch" = amd64 ] && mise_arch=x64
+        url="https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/mise-v${MISE_VERSION}-linux-${mise_arch}.tar.gz"
+        tmp=$(mktemp -d)
+        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011——哈希自官方 release 资产实算）再解压安装
+        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
+            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
+            want="$(pin_sha256 mise-version "$arch" || true)"
+            if [ -n "$want" ] && [ "$got" != "$want" ]; then
+                step 'mise 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
+                fail=$((fail + 1))
+            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/mise/bin/mise" "$mise_bin"; then
+                [ -z "$want" ] && step 'mise 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
+                if [ -n "$mise_current" ]; then step mise CHANGED "升级 → $MISE_VERSION（$mise_bin）"
+                else step mise OK "$MISE_VERSION → $mise_bin"; fi
+            else
+                step mise FAIL "解压/安装失败（$url）"
+                fail=$((fail + 1))
+            fi
+        else
+            step mise FAIL "下载失败（$url）"
+            fail=$((fail + 1))
+        fi
+        rm -rf "$tmp"
     fi
 fi
-# node 运行时三步（与 WDC 两侧同款；已装 LTS 时为快速幂等）
-vp_bin="$(vp_bin_path || true)"
-if [ -n "$vp_bin" ]; then
-    if "$vp_bin" env default lts >/dev/null 2>&1 \
-       && "$vp_bin" env install lts >/dev/null 2>&1 \
-       && "$vp_bin" env on >/dev/null 2>&1; then
-        step 'vp env（lts）' OK 'default/install lts + on'
+# 默认环境 node@lts（对齐原 vp env default lts 语义——每次收敛重发即随最新 LTS，零维护）；
+# ensure 型步骤报 OK 不报 CHANGED（对齐 vp env install 旧例）：幂等重跑零 [CHANGED] 基线由本体安装行承担
+if [ -x "$mise_bin" ]; then
+    if "$mise_bin" use -g node@lts >/dev/null 2>&1; then
+        step 'mise 默认 node（lts）' OK '已确保就位（shims：~/.local/share/mise/shims）'
     else
-        step 'vp env（lts）' FAIL
+        step 'mise 默认 node（lts）' FAIL
         fail=$((fail + 1))
     fi
 fi
@@ -204,21 +265,15 @@ else
 fi
 
 phase 'user 工具 · 机器事实文件 env.sh（ADR-0015）'
-# bashrc 模板只 source 这一个文件：工具安装布局事实（vp env 脚本、fzf 键位示例路径）在安装期探测落盘，
-# 上游换布局只改本脚本与 common.sh 的 vp_env_script，模板不再追路径。每次收敛重写（事实随工具升级而变）。
+# bashrc 模板只 source 这一个文件：fzf 键位示例路径在安装期探测落盘——mise/uv 布局固定，
+# 直接在 bashrc 模板声明（与 uv 同款），不走 env.sh。每次收敛重写（事实随工具升级而变）。
 env_file="$HOME/.config/ldc/env.sh"
-vp_env="$(vp_env_script || true)"
 fzf_kb=/usr/share/doc/fzf/examples/key-bindings.bash
 fzf_cm=/usr/share/doc/fzf/examples/completion.bash
 mkdir -p "$HOME/.config/ldc"
 {
     echo '# ~/.config/ldc/env.sh — 工具布局事实（install-user-tools 每次收敛重写；ADR-0015）'
     echo '# bashrc 模板统一 source 本文件；机器私有偏好放 ~/.bashrc.local（后加载可覆盖）。'
-    if [ -n "$vp_env" ]; then
-        echo ''
-        echo '# vp（Vite+）Node 环境（安装期探测到的实际落位）'
-        printf '. %q\n' "$vp_env"
-    fi
     if [ -f "$fzf_kb" ] || [ -f "$fzf_cm" ]; then
         echo ''
         echo '# fzf 键位绑定与补全（发行版包示例路径，存在才 source）'
@@ -226,11 +281,7 @@ mkdir -p "$HOME/.config/ldc"
         if [ -f "$fzf_cm" ]; then printf '[ -f %s ] && . %s\n' "$fzf_cm" "$fzf_cm"; fi
     fi
 } > "$env_file"
-if [ -n "$vp_env" ]; then
-    step 'env.sh' OK "$env_file（vp/fzf 布局事实已落盘）"
-else
-    step 'env.sh' OK "$env_file（vp 未探测到——仅注释骨架）"
-fi
+step 'env.sh' OK "$env_file（fzf 布局事实已落盘）"
 
 phase 'user 工具 · 汇总'
 if [ "$fail" -eq 0 ]; then

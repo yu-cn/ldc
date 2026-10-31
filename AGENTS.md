@@ -21,12 +21,12 @@ LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可�
 LDC 与 WDC 同主人关联项目，改动需跨仓库统筹：
 
 - **Linux 侧模板主作者位在 LDC**：`dotfiles/linux/` 与 WDC 的 `dotfiles/wsl/` 是同源拷贝，WDC 侧已冻结待退役——改 Linux 侧 shell/git/提示符习惯只改 LDC，勿反向同步
-- **钉子同值**：`configs/vp-version` 与 WDC 的同名文件保持同值，升级同日双改、两仓库各自记账
+- **钉子同值**：跨仓同值钉子同日双改、各自记账（机制保留；随 vp 退役当前无实例——ADR-0016）
 - **WSL 委托契约**：WDC 的 WSL 阶段最终形态是调用 LDC（clone/pull → root 委托 install-packages.sh → user 委托 bootstrap.sh → 验收委托 verify --quick）；改动 bootstrap 各阶段脚本的入口契约（参数、退出码、独立可跑性）前先想 WDC 调用方
 
 ## 红线（改动前自查）
 
-1. **版本钉子单一来源**：vp/lazygit/starship/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它（starship 的 rust 资产命名与 lazygit 的 x86_64 例外都在 install-user-tools 调用点注释）；starship/lazygit/nerd-fonts 的 sha256 行（`sha256 [amd64|arm64] <hex>`）与版本行同文件同次更新、重算自官方 release 资产（ADR-0011）
+1. **版本钉子单一来源**：mise/uv/lazygit/starship/nerd-fonts 的版本只存在 `configs/*-version`，升级只改这一个文件，脚本与断言都读它（starship/uv 的 rust triple 与 lazygit 的 x86_64、mise 的 x64 资产命名例外都在 install-user-tools 调用点注释）；五钉子的 sha256 行（`sha256 [amd64|arm64] <hex>`）与版本行同文件同次更新、重算自官方 release 资产（ADR-0011）
 2. **`.bashrc.local` / `.gitconfig.local` 是机器自留地**：永不入仓库、永不覆写（已存在只提示）；nvm 属自留地，不卸载、不主动清理（LDC 是「只装不删」语义，无移除清单——WDC 的 remove-leftovers 不搬过来）
 3. **git 身份不入仓库**：模板经 `[include] path = ~/.gitidentity` 引用；占位文件的 name/email 必须保持注释态（这是「未填则拒提交」护栏生效的前提）
 4. **dotfiles 落点是模板的渲染拷贝**（ADR-0015，2026-10-25 反转原「符号链接」条款）：机器与仓库只在 bootstrap 收敛时耦合——落点漂移=机器侧直改落点或模板未重渲染；verify 内容断言暴露、triage 分流（吸收=落点回写模板并显式暂存 / 还原=自模板重渲染）；覆盖落点前必备份 `.bak`（绝不静默丢弃机器侧内容）；改模板须重跑 bootstrap / ldc sync 才生效

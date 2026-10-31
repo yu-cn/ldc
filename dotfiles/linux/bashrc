@@ -3,7 +3,8 @@
 # 提示符 starship | 模糊搜索 fzf | 智能跳转 zoxide | ls→eza cat→bat grep→rg find→fd
 # 机器私有段放 ~/.bashrc.local（见文件末尾；ADR-0003 机器自留地）
 
-# 非交互 shell 直接返回
+# 非交互 shell 直接返回（mise shims 的 PATH 先行——登录非交互 shell 经 .profile 间接 source 本文件也要能解析 node）
+case ":$PATH:" in *":$HOME/.local/share/mise/shims:"*) ;; *) PATH="$HOME/.local/share/mise/shims:$PATH";; esac
 case $- in *i*) ;; *) return;; esac
 
 ## ---------- 历史 ----------
@@ -30,7 +31,9 @@ case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH";; 
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 command -v uv >/dev/null 2>&1 && eval "$(uv generate-shell-completion bash)"
 command -v uvx >/dev/null 2>&1 && eval "$(uvx --generate-shell-completion bash)"
-# 工具布局事实（vp env / fzf 键位等，ADR-0015）：install-user-tools 安装期探测写入 ~/.config/ldc/env.sh——
+# mise（Node 等语言工具链；shims 供非交互 shell 解析默认版，activate 供交互按目录切换——ADR-0016）
+command -v mise >/dev/null 2>&1 && eval "$(mise activate bash)"
+# 工具布局事实（fzf 键位等，ADR-0015）：install-user-tools 安装期探测写入 ~/.config/ldc/env.sh——
 # 上游换布局只改安装器，本模板不再追路径；机器私有偏好放 ~/.bashrc.local（末尾加载可覆盖）
 [ -f "$HOME/.config/ldc/env.sh" ] && . "$HOME/.config/ldc/env.sh"
 
@@ -48,6 +51,13 @@ fi
 command -v bat >/dev/null 2>&1 && alias cat='bat'
 command -v rg  >/dev/null 2>&1 && alias grep='rg' || alias grep='grep --color=auto'
 command -v fd  >/dev/null 2>&1 && alias find='fd'
+
+## ---------- WSL 便利垫片（探测门控，ADR-0017；非 WSL 零痕迹） ----------
+if command -v clip.exe >/dev/null 2>&1; then
+    pbcopy()  { clip.exe; }
+    pbpaste() { powershell.exe -NoProfile -Command Get-Clipboard 2>/dev/null | tr -d '\r'; }
+fi
+command -v explorer.exe >/dev/null 2>&1 && open() { explorer.exe "${1:-.}"; }
 
 # Git 快捷方式（走 gitconfig 里的 st/lg 别名）
 alias gs='git st'

@@ -5,7 +5,7 @@
 #   ① dotfiles 落点与模板一致（ADR-0015 内容断言，断效果不断实现；落点映射见 common.sh dotfiles_map）+ hooksPath
 #   ② gitidentity 存在且非占位（未填 = FAIL 是设计内护栏；LDC_SMOKE=1 容器冒烟降为存在性检查）
 #   ③ 包清单核销（dpkg -s 逐项；即 root 阶段完成度）
-#   ④ 语言栈与工具钉子（uv 在位、vp/starship/lazygit = 钉子、node 可用、env.sh 事实文件在位）
+#   ④ 语言栈与工具钉子（mise/uv/starship/lazygit = 钉子、node 可用、env.sh 事实文件在位）
 #   ⑤ 桌面域（gsettings 读值比对；无会话 SKIP）
 # 用法：bash scripts/verify-machine.sh [--quick]   --quick 跳过 gsettings 读值比对（秒级）
 set -uo pipefail
@@ -92,11 +92,11 @@ fi
 
 phase '4/5 · 语言栈与架构'
 assert_that '架构受支持（amd64/arm64）' 'LDC 仅支持 amd64/arm64（ADR-0006）' 'ldc_arch >/dev/null'
-assert_that 'uv 就位' '重跑 bootstrap（user 工具阶段）' '[ -x "$HOME/.local/bin/uv" ] || command -v uv'
-assert_pin vp vp-version "$(vp_bin_path || true)"
+assert_pin mise mise-version "$HOME/.local/bin/mise"
+assert_pin uv uv-version "$HOME/.local/bin/uv"
 assert_pin starship starship-version "$HOME/.local/bin/starship"
 assert_pin lazygit lazygit-version "$HOME/.local/bin/lazygit"
-assert_that 'node 可用' 'node 由 vp 或机器自留地（如 nvm）提供——重跑 bootstrap' 'node_available'
+assert_that 'node 可用' 'node 由 mise 或机器自留地（如 nvm）提供——重跑 bootstrap' 'node_available'
 assert_that '~/.config/ldc/env.sh 在位（工具布局事实，ADR-0015）' '重跑 bash bootstrap.sh（user 工具阶段）' \
     '[ -f "$HOME/.config/ldc/env.sh" ]'
 

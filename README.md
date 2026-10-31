@@ -63,7 +63,7 @@ build-essential · git · curl/wget · jq · fzf / ripgrep / bat / fd / zoxide /
 常用但非每台必需的工具按组平铺在 [configs/](configs/)（[media-doc](configs/media-doc.pkg)：pandoc + ffmpeg · [etckeeper](configs/etckeeper.pkg)：/etc 纳入 git 审计，apt 事务与机主自改全程留痕），`sudo bash scripts/install-packages.sh <组名>` 显式指名安装——装没装由 dpkg 记账，verify 不断言；新增可选组只需加一个清单文件。
 
 **语言运行时**（user 阶段）
-Node 归 **vp**（[版本钉 configs](configs/vp-version)，默认跟随 LTS）、Python 归 **uv**——与 WDC 两侧同工具同习惯；机器已有的 nvm 等属自留地，共存不卸载（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）
+Node 归 **mise**（[版本钉 configs](configs/mise-version)，默认 `node@lts` 随收敛更新）、Python 归 **uv**（钉 `configs/uv-version`）——与 WDC 两侧同工具同习惯；机器已有的 nvm 等属自留地，共存不卸载（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）
 
 **CLI 增强**（user 阶段，版本钉 configs）
 starship 提示符 · lazygit · JetBrainsMono NF 字体（仅桌面栈机器）
@@ -103,7 +103,7 @@ dotfiles/   dotfiles 层：linux / shared 两处，渲染拷贝安装（覆盖�
 ```
 
 - git 身份不入仓库：模板 include 每机本地的 `~/.gitidentity`
-- Node 全权归 **vp**（钉 1.3.0），Python 全权归 **uv**；机器已有运行时管理器（nvm 等）属自留地，共存不卸
+- Node 全权归 **mise**（钉 2026.10.25），Python 全权归 **uv**（钉 0.13.6）；机器已有运行时管理器（nvm 等）属自留地，共存不卸
 - shell 机器自留地：`~/.bashrc.local`（模板最末尾加载，别名可覆盖模板）
 - 桌面域按需启用：无 D-Bus 会话自动 SKIP，不制造假 FAIL
 
