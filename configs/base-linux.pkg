@@ -1,6 +1,8 @@
 # base-linux.pkg — 基础层包清单（每台 Ubuntu/Debian 开发机都需要；ADR-0003 通用核心）
 # 格式：一行一个 apt 包名，# 开头为注释。root 阶段逐包核销（dpkg -s 已装则跳过）
+# libatomic1：node（mise 核心 backend）x64 构建链接之——最小容器实录缺库即装失败（工单10，run 41209046843）
 build-essential
+libatomic1
 git
 curl
 wget
