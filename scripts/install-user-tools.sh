@@ -114,6 +114,11 @@ if [ -x "$mise_bin" ]; then
     mise_out=$(mktemp)
     if "$mise_bin" use -g node@lts >"$mise_out" 2>&1; then
         step 'mise 默认 node（lts）' OK '已确保就位（shims：~/.local/share/mise/shims）'
+    elif ! ldconfig -p 2>/dev/null | grep -q 'libatomic\.so'; then
+        # node（mise 核心 backend，x64 官方构建）链接 libatomic——root 未交接的机器（handoff 首跑/最小容器）
+        # 装不上系统库，属交接前合法中间态而非失败：base-linux 的 libatomic1 随 root 阶段落位，
+        # 交接完成后重跑 bootstrap 即装（冒烟 handoff 腿 run 41209239555 实录）
+        step 'mise 默认 node（lts）' INFO '待 root 阶段（libatomic 缺）——root 交接完成后重跑 bootstrap 即装'
     else
         # FAIL 带错误尾证（冒烟实录：吞输出致 amd64 瞬态无诊断面）
         step 'mise 默认 node（lts）' FAIL "$(tail -n 3 "$mise_out" | tr '\n' ' ')"
