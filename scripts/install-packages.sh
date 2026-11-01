@@ -43,7 +43,12 @@ add_vendor_repo() {
 }
 
 phase 'root · apt 索引更新'
-if apt-get update -qq; then
+# 24h 内已更新则跳过（工单12 顺手项，本地 mtime 判定）：重复索引更新是纯耗时；
+# 新增厂商源的索引更新由 add_vendor_repo 调用点自行补（不受本跳过影响），
+# 新机/清过缓存的机器 lists 无近期 Packages 索引、照常更新
+if [ -n "$(find /var/lib/apt/lists -maxdepth 1 -name '*Packages*' -mmin -1440 -print -quit 2>/dev/null)" ]; then
+    step 'apt-get update' SKIP '索引 24h 内已更新（本地判定）'
+elif apt-get update -qq; then
     step 'apt-get update' OK
 else
     step 'apt-get update' FAIL '索引更新失败（网络/源问题）——修复后重跑（幂等）'
