@@ -1,1 +1,23 @@
+# 运行产物：bootstrap 每跑一次落一份日志（logs/bootstrap-*.log），python 一次性脚本缓存
 logs/
+__pycache__/
+
+# ZCode 工具工作区：video2code / video-agent-kit 插件落盘、会话与工作流数据
+.v2c/
+.video_agent/
+.zcode/
+
+# 已退役面防回流：HANDOFF.md 已于 f5a8610 退役（交接内容归 CONTRIBUTING/docs），防技能再生成误添加
+/HANDOFF.md
+
+# 备份衍生物：落点 .bak 轮转文化（install-dotfiles/triage）只在机器侧，试验拷贝不入库
+*.bak
+
+# 编辑器与跨系统垃圾（WSL/Windows 经 Explorer 互拷常带 Thumbs.db / desktop.ini）
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
