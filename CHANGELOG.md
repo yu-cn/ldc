@@ -1,10 +1,16 @@
 # Changelog
 
+[![Keep a Changelog](https://img.shields.io/badge/Keep%20a%20Changelog-2.0.0-informational)](https://keepachangelog.com/en/2.0.0/)
+
 本项目所有显著变更记录于此文件。
 
-格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)（显著变更人为记录、分类归档、每个版本可跳转）；版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
+- 格式遵循 [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/)（官方简体中文译本尚无 2.0，按规范钉英文版为规范源）——显著变更人为记录、六类型（Added/Changed/Deprecated/Removed/Fixed/Security）分类归档、每版本 compare 链接可跳转、倒序排列；破坏性变更以 `Breaking:` 标记写在对应类型节内（不单列节）
+- 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
 
 ## [Unreleased]
+
+### Added
+- `configs/cli-tools.pkg` 吸收 btop、direnv（[ADR-0018](docs/adr/0018-wsl-comfort-leftover-cleanup.md)）——本机 wsl-comfort（微软 Comfort Shell）残留定夺：btop 原为其可选包唯一留存；direnv 原局限于 Homebrew、bashrc 模板的 direnv 探测钩子自此激活。活体残留（六垫片 / `/home/linuxbrew` / 系统级旧 starship / 日志与脚本 / 孤儿 nvm——归属修正为机器自有非 comfort 所装）经机主授权一次性清理，「只装不删」红线不变；配方与证据入 ADR-0018 与工单 dev-env 11
 
 ### Changed
 - 承接 WDC 移交三件（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md) 补记，联动 [wdc 工单41](https://github.com/yu-cn/wdc)「边界最小核心化」，工单12）——`install-packages.sh` 新增「机器形态」段：默认 shell=bash（幂等 chsh）、wsl.conf systemd=true（is_wsl 门控）、docker 组 usermod 归位（`root_target_user()` = SUDO_USER ?: LDC_USER，root 直调缺 SUDO_USER 由 LDC_USER 契约补）；`docker_skipped()` 单一来源（LDC_SKIP_DOCKER=1 外部覆盖优先、无 systemd 中间态自跳）四处换面同口径——原 WDC wrapper 的透传判定退役；verify 五组扩六组（默认 shell=bash 全形态、systemd 生效 is_wsl 门控，承接 WDC probe.sh 两键）
@@ -13,26 +19,23 @@
 - WSL 便利垫片补全（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md) 补遗，真机 wsl-comfort 残留排查驱动）：open 垫片对存在路径经 wslpath 转 Windows 形式（收编上游同名 shim 实现，原漏收）；补 xdg-open→open 探测门控委托（WSL 无 xdg-utils，`gh --web` 一类调用不再断链）——wsl-comfort 时代 `~/bin` 六 shim（pbcopy/pbpaste/open/xdg-open/fd/bat）确认由声明面接管
 - `.gitignore` 补全防误添加面：ZCode 工具工作区（`.v2c/`、`.video_agent/`、`.zcode/`）、退役面 `/HANDOFF.md` 防回流（f5a8610 退役）、`*.bak` 与编辑器/跨系统垃圾（`.vscode/`、`.idea/`、swap、`.DS_Store`、`Thumbs.db`、`desktop.ini`）、`__pycache__/`——`logs/`（bootstrap 每跑落一份日志）沿用既有忽略；`docs/demo.cast`（录制源）与 `*.gif` 为有意入库资产，保持不忽略
 
-### Added
-- `configs/cli-tools.pkg` 吸收 btop、direnv（[ADR-0018](docs/adr/0018-wsl-comfort-leftover-cleanup.md)）——本机 wsl-comfort（微软 Comfort Shell）残留定夺：btop 原为其可选包唯一留存；direnv 原局限于 Homebrew、bashrc 模板的 direnv 探测钩子自此激活。活体残留（六垫片 / `/home/linuxbrew` / 系统级旧 starship / 日志与脚本 / 孤儿 nvm——归属修正为机器自有非 comfort 所装）经机主授权一次性清理，「只装不删」红线不变；配方与证据入 ADR-0018 与工单 dev-env 11
-
-## [0.10.0] – 2026-11-01
+## [0.10.0] - 2026-11-01
 
 ### Changed
 - 工单面统一收口（治理批，联动 [wdc v0.10.0](https://github.com/yu-cn/wdc/releases/tag/v0.10.0)）——14 张已收口票补 `Status: done` 行并归档 `done/`（dev-env 01–10、upstream-borrow 01–04、git-free-quickstart 01）：flock 运行锁 / 上游跟进面（research 笔记 + 账本 + check-upstream.sh）/ get.sh 钉版 / CI 幂等重跑段经巡检确认均已实现，票面不可读曾致「已实现误判为未实现」（双仓两连实录）；dev-standard §2 补「收口即时置终态」纪律（双仓同源同批）
 - 上游基线核销：check-upstream 实跑无差异（HEAD fb564611 与 2026-10-25 基线一致、包清单零变化）
 
-## [0.9.0] – 2026-10-31
+## [0.9.0] - 2026-10-31
 
-### Changed
-- **破坏性**：语言管理器 vp 退役、mise 升正（[ADR-0016](docs/adr/0016-vp-retire-mise-takeover.md)）——`install-user-tools.sh` 的 vp 安装/env 编排块换 mise（GitHub release + sha256 双钉、双架构经 `ldc_arch()`）+ `mise use -g node@lts` 默认环境；存量机一次性迁移豁免（探测到 vp 即按其安装器写入面反向清除，「只装不删」红线显式例外）；uv 从官方 curl|sh 升 release+sha256 双钉（ADR-0011）；env.sh 事实文件收缩为 fzf 面（mise/uv 布局固定、直接在 bashrc 模板声明）；verify/plan/validate 断言与投影换面；VSCode 清单去 `voidzero.vite-plus-extension-pack`；AGENTS 红线1、GLOSSARY、README 同步；dev-standard §6 钉子同值标注「当前无实例」（本仓主笔，WDC 拷贝随其工单39）
-- README 首屏演示重录——换轨后真实输出（plan/verify mise 钉子行），agg v1.9.0 重转 GIF
 ### Added
 - WSL 剪贴板/open 垫片：bashrc 模板 `clip.exe`/`explorer.exe` 探测门控段——pbcopy/pbpaste/open（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md)，上游 WSL Comfort 同款件的 LDC 形态）
 - `configs/mise-version`、`configs/uv-version` 双钉（哈希自官方 release 资产实算/侧车对齐，ADR-0011）
 - VSCode 扩展清单补 fss/ZCode 上游推荐三件（better-comments / mermaid-preview / tailwindcss）——vite-plus 扩展包退役零损失核实（联动 wdc 工单39）
 
-## [0.8.0] – 2026-10-27
+### Changed
+- **Breaking:** 语言管理器 vp 退役、mise 升正（[ADR-0016](docs/adr/0016-vp-retire-mise-takeover.md)）——`install-user-tools.sh` 的 vp 安装/env 编排块换 mise（GitHub release + sha256 双钉、双架构经 `ldc_arch()`）+ `mise use -g node@lts` 默认环境；存量机一次性迁移豁免（探测到 vp 即按其安装器写入面反向清除，「只装不删」红线显式例外）；uv 从官方 curl|sh 升 release+sha256 双钉（ADR-0011）；env.sh 事实文件收缩为 fzf 面（mise/uv 布局固定、直接在 bashrc 模板声明）；verify/plan/validate 断言与投影换面；VSCode 清单去 `voidzero.vite-plus-extension-pack`；AGENTS 红线1、GLOSSARY、README 同步；dev-standard §6 钉子同值标注「当前无实例」（本仓主笔，WDC 拷贝随其工单39）
+- README 首屏演示重录——换轨后真实输出（plan/verify mise 钉子行），agg v1.9.0 重转 GIF
+## [0.8.0] - 2026-10-27
 
 ### Added
 - get.sh 支持 `LDC_REPO` 覆盖引导地址（fork 用户一条命令对齐手动路径）与 `LDC_TAG` env 钉版（与位置参数同义，对齐 WDC get.ps1 的 env 口径）
@@ -42,7 +45,7 @@
 - bootstrap exit 2 的待办明细行尾追加机器标记 `[LDC_TODO=tag]`（root-handoff / desktop / git-identity）——委托方 WDC 的 WSL 阶段改按标记判定待办语义，退役散文文案 grep（委托契约增补，[LDC ADR-0007 补记](docs/adr/0007-wdc-ldc-coordination.md)）；人类可读待办文案不变
 - dev-standard §5 补「双仓版本对齐」约定：双仓联动变更（委托契约 / 同源规范 / 同值钉子）发版时两仓版本号对齐收口（LDC_TODO 契约两仓同批积压 `[Unreleased]` 的实录定规矩）——本版与 WDC v0.8.0 同号同日为首次执行
 
-## [0.7.0] – 2026-10-26
+## [0.7.0] - 2026-10-26
 
 ### Added
 - `ldc audit` 清单准入对账：自装未声明（对全部 `.pkg` 并集的差集，喂清单准入）与已声明未装（收敛待办）两个方向，只读恒 exit 0
@@ -50,10 +53,7 @@
 - 漂移方向判定（ADR-0015 补注）：渲染账本 `~/.local/state/ldc/rendered.sha256` 判定 template-update / machine / both / unknown 四方向——纯模板更新直接重渲染、不再产生 `.bak`
 - CHANGELOG（本文件，Keep a Changelog 格式）与 README 首屏终端速览演示（`docs/demo.cast` + agg 转 GIF 嵌播）
 
-## [0.6.0] – 2026-10-25
-
-### Changed
-- **破坏性**：dotfiles 落点由符号链接改为安装期渲染拷贝（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）——仓库缺席不再影响已收敛机器（只剩 `ldc` CLI 自身）；机器侧直改落点不再污染仓库，verify / status 改内容断言、triage 分流（吸收 / 还原）；覆盖前轮转备份 `.bak`
+## [0.6.0] - 2026-10-25
 
 ### Added
 - 工具布局事实文件 `~/.config/ldc/env.sh`：bashrc 模板不再硬编码 vp / fzf 路径，上游换布局只改安装器
@@ -62,12 +62,15 @@
 - bootstrap flock 运行锁（ADR-0013）；上游跟进机制（ADR-0014：check-upstream + status 30 天提醒）；get.sh 支持 tag 钉版
 - CI 冒烟补幂等重跑段（第二遍 exit 0 且零 CHANGED 才放行）
 
-## [0.5.0] – 2026-10-24
+### Changed
+- **Breaking:** dotfiles 落点由符号链接改为安装期渲染拷贝（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）——仓库缺席不再影响已收敛机器（只剩 `ldc` CLI 自身）；机器侧直改落点不再污染仓库，verify / status 改内容断言、triage 分流（吸收 / 还原）；覆盖前轮转备份 `.bak`
+
+## [0.5.0] - 2026-10-24
 
 ### Added
 - `scripts/get.sh` 零前置远程一键引导：缺 git / curl 自动 apt 装、`~/.ldc` 指针复用、转发 bootstrap
 
-## [0.4.0] – 2026-10-24
+## [0.4.0] - 2026-10-24
 
 ### Added
 - 可选包组（ADR-0010）：清单即菜单、`install-packages.sh <组>` 显式指名、dpkg 记账不进断言面（首个成员 media-doc）
@@ -76,24 +79,24 @@
 ### Changed
 - 下载资产从只钉版本升级为版本 + sha256 同文件双钉（ADR-0011），校验不符即拒绝安装
 
-## [0.3.0] – 2026-10-24
+## [0.3.0] - 2026-10-24
 
 ### Added
 - Docker daemon.json 受保护合并（ADR-0009）：声明叶键胜出、机器自有键保留、绝不自动重启
 - WSL 发行版环境由 WDC 委托 LDC 收敛（ADR-0007 契约落地），Linux 侧单一来源归位
 
-## [0.2.0] – 2026-10-24
+## [0.2.0] - 2026-10-24
 
 ### Added
 - 桌面应用域（ADR-0008）：VSCode + 扩展清单 + Chrome，双架构厂商源对称
 - CI 验证面扩三腿（handoff + amd64 / arm64 容器冒烟）
 
-## [0.1.0] – 2026-10-23
+## [0.1.0] - 2026-10-23
 
 ### Added
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
-[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.10.0...HEAD
 [0.10.0]: https://github.com/yu-cn/ldc/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/yu-cn/ldc/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yu-cn/ldc/compare/v0.7.0...v0.8.0
