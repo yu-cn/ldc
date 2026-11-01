@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-01
+
 ### Added
 - `configs/cli-tools.pkg` 吸收 btop、direnv（[ADR-0018](docs/adr/0018-wsl-comfort-leftover-cleanup.md)）——本机 wsl-comfort（微软 Comfort Shell）残留定夺：btop 原为其可选包唯一留存；direnv 原局限于 Homebrew、bashrc 模板的 direnv 探测钩子自此激活。活体残留（六垫片 / `/home/linuxbrew` / 系统级旧 starship / 日志与脚本 / 孤儿 nvm——归属修正为机器自有非 comfort 所装）经机主授权一次性清理，「只装不删」红线不变；配方与证据入 ADR-0018 与工单 dev-env 11
 
@@ -97,7 +99,8 @@
 ### Added
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
-[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/yu-cn/ldc/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/yu-cn/ldc/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/yu-cn/ldc/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yu-cn/ldc/compare/v0.7.0...v0.8.0
