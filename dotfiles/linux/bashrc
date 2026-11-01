@@ -57,7 +57,14 @@ if command -v clip.exe >/dev/null 2>&1; then
     pbcopy()  { clip.exe; }
     pbpaste() { powershell.exe -NoProfile -Command Get-Clipboard 2>/dev/null | tr -d '\r'; }
 fi
-command -v explorer.exe >/dev/null 2>&1 && open() { explorer.exe "${1:-.}"; }
+if command -v explorer.exe >/dev/null 2>&1; then
+    open() {   # 存在的路径经 wslpath 转 Windows 形式再交 explorer，URL 原样（收编上游 wsl-comfort open 垫片实现）
+        local t=${1:-.}
+        [ -n "${1:-}" ] && [ -e "$t" ] && t=$(wslpath -w "$t")
+        explorer.exe "$t"
+    }
+    xdg-open() { open "$@"; }   # WSL 通常无 xdg-utils：gh --web 一类工具的 xdg-open 调用接住
+fi
 
 # Git 快捷方式（走 gitconfig 里的 st/lg 别名）
 alias gs='git st'

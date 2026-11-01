@@ -8,3 +8,5 @@
 - **职责成文**：LDC 收敛「语言管理器 + 默认环境」（ADR-0016 后 = mise + node@lts、uv），具体语言版本归各项目（`mise.toml` / uv 项目管理）——与 WDC「装管理器不装版本」同哲学，首次在 ADR 层成文。
 
 拒绝的替代：照搬 WSL Comfort 的 Homebrew（重写包管理，违 AGENTS 红线 11）；语言版本钉进 configs（版本事实归项目仓，环境仓钉语言版会跟项目脱节）；zsh 换轨（LDC 已定 bash，无换轨理由）。
+
+补遗（2026-11-01，真机残留排查驱动）：垫片边界不变，实现补全两处漏收——open 对存在路径经 `wslpath -w` 转 Windows 形式再交 explorer（上游 open 垫片的实现细节，原实现直传原样参数）；补 `xdg-open`→`open` 门控委托（WSL 通常无 xdg-utils，`gh --web` 一类工具的调用不再断链）。动机：本机排查出 wsl-comfort 时代 `~/bin` 六个文件 shim 残留（pbcopy/pbpaste/open/xdg-open/fd/bat），逐项核对后确认均可由 LDC 声明面接管（前四者=本垫片段、fd/bat=root 阶段 `/usr/local/bin` 兼容链接），接管后删除残留即无能力损失。

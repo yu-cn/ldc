@@ -6,6 +6,9 @@
 
 ## [Unreleased]
 
+### Changed
+- WSL 便利垫片补全（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md) 补遗，真机 wsl-comfort 残留排查驱动）：open 垫片对存在路径经 wslpath 转 Windows 形式（收编上游同名 shim 实现，原漏收）；补 xdg-open→open 探测门控委托（WSL 无 xdg-utils，`gh --web` 一类调用不再断链）——wsl-comfort 时代 `~/bin` 六 shim（pbcopy/pbpaste/open/xdg-open/fd/bat）确认由声明面接管
+
 ## [0.10.0] – 2026-11-01
 
 ### Changed
