@@ -4,7 +4,7 @@
 
 本项目所有显著变更记录于此文件。
 
-- 格式遵循 [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/)（官方简体中文译本尚无 2.0，按规范钉英文版为规范源）——显著变更人为记录、六类型（Added/Changed/Deprecated/Removed/Fixed/Security）分类归档、每版本 compare 链接可跳转、倒序排列；破坏性变更以 `Breaking:` 标记写在对应类型节内（不单列节）
+- 格式遵循 [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/) 的中文化改造版（[docs/changelog-standard.md](docs/changelog-standard.md)，双仓同源、主作者位 LDC）——显著变更人为记录、六类型（Added/Changed/Deprecated/Removed/Fixed/Security）分类归档、每版本 compare 链接可跳转、倒序排列；破坏性变更以 `Breaking:` 标记写在对应类型节内（不单列节）
 - 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
 
 ## [Unreleased]
@@ -17,6 +17,7 @@
 - bashrc Ctrl-T 加 bat 右侧实时预览（FZF_CTRL_T_OPTS，对齐 wdc pwsh 侧 cc46108；fd/bat 任一缺席不设）；`configs/cli-tools.pkg` 移除 tree（eza lt 完全覆盖，已装机残留按「只装不删」留存）；apt 索引 24h 内已更新（lists mtime 本地判定）则跳过（工单12 顺手项）
 - dev-standard §46 补澄清句：同号同日仅限联动变更——无契约联动的批次不追齐版本号（v0.10.0 锚点回看：wdc 功能批 × 本仓治理批零交集仍同号同日，属过度执行；工单41 定澄清）
 - WSL 便利垫片补全（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md) 补遗，真机 wsl-comfort 残留排查驱动）：open 垫片对存在路径经 wslpath 转 Windows 形式（收编上游同名 shim 实现，原漏收）；补 xdg-open→open 探测门控委托（WSL 无 xdg-utils，`gh --web` 一类调用不再断链）——wsl-comfort 时代 `~/bin` 六 shim（pbcopy/pbpaste/open/xdg-open/fd/bat）确认由声明面接管
+- CHANGELOG.md 升级 Keep a Changelog 2.0.0 并落地中文化改造版规范（docs/changelog-standard.md，本仓主笔、双仓同源）：版本节连字符归一、破坏性条目改 `Breaking:` 标记、节内六类型 canonical 序、修复 Unreleased compare 链陈旧；dev-standard-guard 同源守护扩展至 changelog-standard.md
 - `.gitignore` 补全防误添加面：ZCode 工具工作区（`.v2c/`、`.video_agent/`、`.zcode/`）、退役面 `/HANDOFF.md` 防回流（f5a8610 退役）、`*.bak` 与编辑器/跨系统垃圾（`.vscode/`、`.idea/`、swap、`.DS_Store`、`Thumbs.db`、`desktop.ini`）、`__pycache__/`——`logs/`（bootstrap 每跑落一份日志）沿用既有忽略；`docs/demo.cast`（录制源）与 `*.gif` 为有意入库资产，保持不忽略
 
 ## [0.10.0] - 2026-11-01

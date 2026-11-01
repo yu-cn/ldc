@@ -14,7 +14,7 @@ LDC：一条命令把 Ubuntu/Debian 机器收敛到声明状态（幂等、可�
 
 - `configs/` 声明式层（清单与版本钉子；可选包组平铺其中——指名安装、不进断言，ADR-0010） · `scripts/` 编排层 · `dotfiles/` dotfiles 层（ADR-0002；落点渲染拷贝见 ADR-0015，落点映射单一来源在 `scripts/lib/common.sh` 的 `dotfiles_map`）
 - `bootstrap.sh` 唯一入口 · `validate.sh` 无副作用校验 · `ldc` CLI · `scripts/verify-machine.sh` 机器断言 · `scripts/plan-machine.sh` 干跑预演（只读）
-- `CONTRIBUTING.md` 对外贡献指南 · `docs/dev-standard.md` 内部开发规范（双仓同源，主作者位 LDC，ADR-0012）
+- `CONTRIBUTING.md` 对外贡献指南 · `docs/dev-standard.md` 内部开发规范（双仓同源，主作者位 LDC，ADR-0012） · `docs/changelog-standard.md` CHANGELOG 格式规范（Keep a Changelog 2.0.0 中文化改造版，双仓同源，主作者位 LDC）
 
 ## 姊妹仓库 WDC 统筹（ADR-0007）
 
