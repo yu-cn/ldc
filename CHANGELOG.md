@@ -7,6 +7,9 @@
 ## [Unreleased]
 
 ### Changed
+- 承接 WDC 移交三件（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md) 补记，联动 [wdc 工单41](https://github.com/yu-cn/wdc)「边界最小核心化」，工单12）——`install-packages.sh` 新增「机器形态」段：默认 shell=bash（幂等 chsh）、wsl.conf systemd=true（is_wsl 门控）、docker 组 usermod 归位（`root_target_user()` = SUDO_USER ?: LDC_USER，root 直调缺 SUDO_USER 由 LDC_USER 契约补）；`docker_skipped()` 单一来源（LDC_SKIP_DOCKER=1 外部覆盖优先、无 systemd 中间态自跳）四处换面同口径——原 WDC wrapper 的透传判定退役；verify 五组扩六组（默认 shell=bash 全形态、systemd 生效 is_wsl 门控，承接 WDC probe.sh 两键）
+- bashrc Ctrl-T 加 bat 右侧实时预览（FZF_CTRL_T_OPTS，对齐 wdc pwsh 侧 cc46108；fd/bat 任一缺席不设）；`configs/cli-tools.pkg` 移除 tree（eza lt 完全覆盖，已装机残留按「只装不删」留存）；apt 索引 24h 内已更新（lists mtime 本地判定）则跳过（工单12 顺手项）
+- dev-standard §46 补澄清句：同号同日仅限联动变更——无契约联动的批次不追齐版本号（v0.10.0 锚点回看：wdc 功能批 × 本仓治理批零交集仍同号同日，属过度执行；工单41 定澄清）
 - WSL 便利垫片补全（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md) 补遗，真机 wsl-comfort 残留排查驱动）：open 垫片对存在路径经 wslpath 转 Windows 形式（收编上游同名 shim 实现，原漏收）；补 xdg-open→open 探测门控委托（WSL 无 xdg-utils，`gh --web` 一类调用不再断链）——wsl-comfort 时代 `~/bin` 六 shim（pbcopy/pbpaste/open/xdg-open/fd/bat）确认由声明面接管
 - `.gitignore` 补全防误添加面：ZCode 工具工作区（`.v2c/`、`.video_agent/`、`.zcode/`）、退役面 `/HANDOFF.md` 防回流（f5a8610 退役）、`*.bak` 与编辑器/跨系统垃圾（`.vscode/`、`.idea/`、swap、`.DS_Store`、`Thumbs.db`、`desktop.ini`）、`__pycache__/`——`logs/`（bootstrap 每跑落一份日志）沿用既有忽略；`docs/demo.cast`（录制源）与 `*.gif` 为有意入库资产，保持不忽略
 
