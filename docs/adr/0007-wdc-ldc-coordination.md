@@ -27,3 +27,12 @@ LDC 与 [WDC](https://github.com/yu-cn/wdc) 是同一主人的关联项目（本
 - bootstrap exit 2 的每条待办明细行尾追加机器标记 `[LDC_TODO=tag]`：`root-handoff` / `desktop` / `git-identity`。**标记字面量属委托契约**——变更须与 WDC `scripts/wsl/setup-ubuntu.sh` 同日双改；新增待办类别必须配新标记。
 - WDC 侧判定改按标记、且取**严格形态**：待办集合恰为 `{desktop}` 才按「WSL 形态预期」容忍为完成；出现任何未知标记（本仓未来新增类别而 WDC 未跟进）一律按真问题浮出——宁可误红不可静默吞待办。
 - 生产侧活测试：fresh-container.yml 的 handoff job 断言 `LDC_TODO=root-handoff` 在位（交接路径 exit 2 实跑），防契约标记静默漂移。
+
+**root 阶段机器形态三件移交**（补记 2026-11-01，联动 WDC 工单41「边界最小核心化」——主人解除跨仓限制，GLOSSARY WDC 侧词条「双边最优化」）：WDC `setup-ubuntu.sh` 薄委托 wrapper 的最后三件「WDC opinion」归位本仓单一实现，WDC 侧撤除（其 Phase B）、probe.sh 随之退役：
+
+- **本仓落点**：`install-packages.sh`（root 阶段唯一脚本）新增「机器形态」段——① 默认 shell=bash（幂等 chsh）；② `/etc/wsl.conf` systemd=true（`is_wsl` 内核探测门控，写入后提示 `wsl --shutdown` 生效语义与原 WDC 实现一致）；③ docker 组 usermod（原 SUDO_USER 块扩兜底）。三件此前是 WDC 因「root 直调缺 SUDO_USER」而保留的包装层职责。
+- **`LDC_USER` 契约（新增）**：root 阶段操作对象 = `SUDO_USER ?: LDC_USER`（`root_target_user()` 单一来源）。本仓自身 bootstrap 流程走 sudo 语境天然有 SUDO_USER；WDC root 直调无此变量——WDC wrapper 显式 `LDC_USER=<WSL默认用户>` 传入。容器 root 冒烟两者皆空 → 按无目标用户跳过。**契约字面量与 WDC setup-ubuntu.sh 同日双改**（同 LDC_TODO 先例）。
+- **docker 跳过自判定**：`docker_skipped()` 单一来源——`LDC_SKIP_DOCKER=1` 外部覆盖优先，否则无 systemd 中间态（`/run/systemd/system` 缺席）自跳；安装面（install-packages 两处）、verify 面、`root_stage_complete` 四处同读。原「WDC 探测 systemd 后透传 LDC_SKIP_DOCKER」退役，env 变量保留为外部覆盖语义（CI fresh-container 显式 `LDC_SKIP_DOCKER=1` 行为不变）。
+- **verify 断言面**：新增「默认 shell = bash」（全形态）与「systemd 生效」（`is_wsl` 门控）两断言——承接 WDC probe.sh 的 WSL 特有两键；非 WSL 形态此前从未断言 systemd，不扩面。
+
+拒绝的替代：WDC wrapper 以 `su -l <user> -c 'sudo -n …'` 复现 sudo 语境（WSL 默认用户 sudo 需密码，非交互必挂）；LDC 新开独立 root-ops 脚本（三件每件三五行的体量，并入 install-packages.sh 现有 root 面最省契约——退出码语义与「可独立 sudo 运行」红线不变）。

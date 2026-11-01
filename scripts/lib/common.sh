@@ -46,6 +46,24 @@ desktop_stack_present() {
     have gsettings && ! is_wsl
 }
 
+docker_skipped() {
+    # docker 域跳过判定（单一来源，工单12）：LDC_SKIP_DOCKER=1 外部覆盖优先（CI 冒烟显式跳过）；
+    # 否则无 systemd 中间态自跳——wsl.conf 刚写入未重启时 systemctl 不可用，装了也起不来，
+    # 待重启后重跑补装（幂等）。安装面与 verify 面同读此判定；原 WDC 侧透传判定随工单41
+    # 三件移交改为本仓自判定，env 变量保留为外部覆盖语义
+    [ "${LDC_SKIP_DOCKER:-0}" = "1" ] && return 0
+    [ -d /run/systemd/system ] && return 1
+    return 0
+}
+
+root_target_user() {
+    # root 阶段目标用户（chsh / docker 组的操作对象，工单12）：sudo 语境优先（本仓自身
+    # bootstrap 流程 SUDO_USER 天然在位）；委托方 root 直调无 SUDO_USER——显式 LDC_USER
+    # 兜底（WDC setup-ubuntu.sh 传 WSL 默认用户，ADR-0007 契约补记 2026-11-01）；
+    # 都空（容器 root 冒烟）返回空串，调用方按「无目标用户」跳过
+    printf '%s\n' "${SUDO_USER:-${LDC_USER:-}}"
+}
+
 ldc_repo() {
     # 仓库根：common.sh 恒位于 <repo>/scripts/lib/ 下，从自身位置推导（不受调用方 cwd 影响）
     printf '%s\n' "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -259,7 +277,7 @@ root_stage_complete() {
         dpkg -s "$pkg" >/dev/null 2>&1 || missing=$((missing + 1))
     done < <(pkg_list base-linux.pkg; pkg_list cli-tools.pkg)
     have gh || missing=$((missing + 1))
-    if [ "${LDC_SKIP_DOCKER:-0}" != "1" ]; then
+    if ! docker_skipped; then
         have docker || missing=$((missing + 1))
         # daemon 声明键同属 root 阶段安装面（ADR-0009；docker 在位才要求）
         if have docker && ! docker_daemon_declared_ok; then

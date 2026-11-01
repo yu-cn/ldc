@@ -3,6 +3,8 @@
 # 必须可独立 sudo 运行：cd <repo> && sudo bash scripts/install-packages.sh
 # 可选包组（ADR-0010）：附加参数显式指名——sudo bash scripts/install-packages.sh media-doc
 #   （清单即菜单 configs/<名>.pkg；装没装由 dpkg 记账，不进 verify/root 完成度）
+# 工单12（承接 WDC 工单41 移交）：root 阶段另含机器形态三件——默认 shell=bash（chsh）、
+#   wsl.conf systemd（is_wsl 门控）、docker 组免 sudo（root_target_user 判定操作对象）
 # 幂等：已装全部跳过；逐包失败不中断，结尾汇总非零退。容器 root 直跑同样成立（CI 冒烟路径）
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -15,6 +17,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 export DEBIAN_FRONTEND=noninteractive
 fail=0
+# chsh / docker 组的操作对象（sudo 语境优先，委托方 root 直调经 LDC_USER 显式传入——ADR-0007）
+target_user=$(root_target_user)
 
 add_vendor_repo() {
     # add_vendor_repo <keyring名> <密钥URL> <源文件名> <源行> [direct] [源URL标记] —— 厂商 apt 源（幂等）
@@ -126,9 +130,39 @@ else
     fi
 fi
 
+phase 'root · 机器形态（默认 shell / wsl.conf systemd——工单12 自 WDC setup-ubuntu.sh 移交）'
+# 默认 shell = bash（幂等）：本仓 dotfiles 以 bash 为壳，默认 shell 与声明一致；
+# 无目标用户（容器 root 冒烟）跳过
+if [ -z "$target_user" ]; then
+    step '默认 shell' SKIP '无目标用户（容器 root 冒烟）'
+else
+    cur_shell=$(getent passwd "$target_user" | cut -d: -f7)
+    if [ "$cur_shell" = "/bin/bash" ]; then
+        step '默认 shell' SKIP "$target_user 已是 bash"
+    elif chsh -s /bin/bash "$target_user"; then
+        step '默认 shell' CHANGED "$target_user → /bin/bash（重新登录生效）"
+    else
+        step '默认 shell' FAIL "chsh 失败（当前 $cur_shell）"
+        fail=$((fail + 1))
+    fi
+fi
+# wsl.conf systemd：WSL 形态才相关（Docker 守护进程依赖）；写入后需 wsl --shutdown 重启
+# 发行版生效——本会话内 systemd 仍是未生效中间态，docker 域由 docker_skipped 自跳、
+# 重启后重跑 bootstrap 补装（幂等）。语义与原 WDC setup-ubuntu.sh 实现一致（移交不改行为）
+if is_wsl; then
+    if grep -q '^systemd=true' /etc/wsl.conf 2>/dev/null; then
+        step 'wsl.conf systemd' SKIP '已启用'
+    else
+        printf '\n[boot]\nsystemd=true\n' >> /etc/wsl.conf
+        step 'wsl.conf systemd' CHANGED '已写入——wsl --shutdown 后下次进入生效'
+    fi
+else
+    step 'wsl.conf systemd' SKIP '非 WSL 形态'
+fi
+
 phase 'root · Docker'
-if [ "${LDC_SKIP_DOCKER:-0}" = "1" ]; then
-    step docker SKIP 'LDC_SKIP_DOCKER=1'
+if docker_skipped; then
+    step docker SKIP '外部 LDC_SKIP_DOCKER 或 systemd 未生效中间态——生效后重跑补装'
 elif have docker; then
     step docker SKIP '已装'
 else
@@ -139,12 +173,12 @@ else
         fail=$((fail + 1))
     fi
 fi
-# docker 组免 sudo：幂等；有 SUDO_USER 才做（容器 root 直跑无 SUDO_USER，跳过不碍）
-if [ -n "${SUDO_USER:-}" ] && [ "${LDC_SKIP_DOCKER:-0}" != "1" ]; then
-    if getent group docker | grep -qw "$SUDO_USER"; then
-        step 'docker 组' SKIP "$SUDO_USER 已在组"
-    elif usermod -aG docker "$SUDO_USER"; then
-        step 'docker 组' CHANGED "$SUDO_USER 已入组（重新登录生效）"
+# docker 组免 sudo：幂等；无目标用户（容器 root 直跑）跳过不碍
+if [ -n "$target_user" ] && ! docker_skipped; then
+    if getent group docker | grep -qw "$target_user"; then
+        step 'docker 组' SKIP "$target_user 已在组"
+    elif usermod -aG docker "$target_user"; then
+        step 'docker 组' CHANGED "$target_user 已入组（重新登录生效）"
     else
         step 'docker 组' FAIL
         fail=$((fail + 1))
@@ -155,8 +189,8 @@ phase 'root · Docker daemon 配置（受保护合并，ADR-0009）'
 # 通用核心键（日志轮转 + live-restore）经 jq 递归合并进 daemon.json：声明叶键胜出、
 # 机器自有键（镜像加速/data-root/NVIDIA 等）原样保留；绝不自动重启 docker（重启杀在跑容器）——
 # live-restore 生效后的重启本就不再杀容器，重启时机留给机主
-if [ "${LDC_SKIP_DOCKER:-0}" = "1" ]; then
-    step 'daemon 配置' SKIP 'LDC_SKIP_DOCKER=1'
+if docker_skipped; then
+    step 'daemon 配置' SKIP '外部 LDC_SKIP_DOCKER 或 systemd 未生效中间态'
 elif ! have docker; then
     step 'daemon 配置' SKIP 'docker 不在位'
 else

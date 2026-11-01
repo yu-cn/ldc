@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2088  # 标签文案中的 ~/ 是显示约定不参与展开；真实路径展开一律用 $HOME
 # verify-machine.sh — 机器状态断言（只读，不改变任何状态）；任一 FAIL → exit 1
-# 五组断言（对齐 WDC verify-machine.ps1 风格）：
+# 六组断言（对齐 WDC verify-machine.ps1 风格）：
 #   ① dotfiles 落点与模板一致（ADR-0015 内容断言，断效果不断实现；落点映射见 common.sh dotfiles_map）+ hooksPath
 #   ② gitidentity 存在且非占位（未填 = FAIL 是设计内护栏；LDC_SMOKE=1 容器冒烟降为存在性检查）
 #   ③ 包清单核销（dpkg -s 逐项；即 root 阶段完成度）
 #   ④ 语言栈与工具钉子（mise/uv/starship/lazygit = 钉子、node 可用、env.sh 事实文件在位）
 #   ⑤ 桌面域（gsettings 读值比对；无会话 SKIP）
+#   ⑥ WSL 形态（默认 shell=bash / systemd 生效——工单12 自 WDC probe.sh 移交，安装面 install-packages.sh 同口径）
 # 用法：bash scripts/verify-machine.sh [--quick]   --quick 跳过 gsettings 读值比对（秒级）
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -41,7 +42,7 @@ assert_pin() {
     fi
 }
 
-phase '1/5 · dotfiles 落点与接线（ADR-0015 内容断言）'
+phase '1/6 · dotfiles 落点与接线（ADR-0015 内容断言）'
 assert_dotfiles() {
     # assert_dotfiles <显示名> <模板绝对路径> <落点绝对路径> <mode>——落点状态经 dotfiles_entry_state 判定
     local name=$1 src=$2 dst=$3 mode=$4 state
@@ -59,7 +60,7 @@ done < <(dotfiles_map_entries)
 assert_that 'pre-commit 钩子已接线' 'git config core.hooksPath .githooks（或重跑 bootstrap）' \
     '[ "$(git -C "$ROOT" config core.hooksPath)" = ".githooks" ]'
 
-phase '2/5 · 身份断言'
+phase '2/6 · 身份断言'
 if [ "${LDC_SMOKE:-0}" = "1" ]; then
     assert_that '~/.gitidentity 存在（SMOKE 降级）' '重跑 bootstrap 生成占位' \
         '[ -e "$HOME/.gitidentity" ]'
@@ -68,14 +69,14 @@ else
         '[ -n "$(git config --global --includes --get user.name)" ] && [ -n "$(git config --global --includes --get user.email)" ]'
 fi
 
-phase '3/5 · 包清单核销（root 阶段完成度）'
+phase '3/6 · 包清单核销（root 阶段完成度）'
 while read -r pkg; do
     assert_that "apt: $pkg" "root 阶段待交接：$(root_handoff_cmd)" \
         "dpkg -s $pkg"
 done < <(pkg_list base-linux.pkg && pkg_list cli-tools.pkg)
 assert_that 'gh 在位' 'root 阶段安装（官方 apt 源）' 'command -v gh'
-if [ "${LDC_SKIP_DOCKER:-0}" = "1" ]; then
-    step 'docker 在位' SKIP 'LDC_SKIP_DOCKER=1'
+if docker_skipped; then
+    step 'docker 在位' SKIP '外部 LDC_SKIP_DOCKER 或 systemd 未生效中间态'
 else
     assert_that 'docker 在位' 'root 阶段安装（get.docker.com）' 'command -v docker'
     assert_that 'docker daemon 声明键在位（日志轮转 + live-restore）' \
@@ -90,7 +91,7 @@ else
     done < <(pkg_list desktop-apps.pkg)
 fi
 
-phase '4/5 · 语言栈与架构'
+phase '4/6 · 语言栈与架构'
 assert_that '架构受支持（amd64/arm64）' 'LDC 仅支持 amd64/arm64（ADR-0006）' 'ldc_arch >/dev/null'
 assert_pin mise mise-version "$HOME/.local/bin/mise"
 assert_pin uv uv-version "$HOME/.local/bin/uv"
@@ -100,7 +101,7 @@ assert_that 'node 可用' 'node 由 mise 或机器自留地（如 nvm）提供�
 assert_that '~/.config/ldc/env.sh 在位（工具布局事实，ADR-0015）' '重跑 bash bootstrap.sh（user 工具阶段）' \
     '[ -f "$HOME/.config/ldc/env.sh" ]'
 
-phase '5/5 · 桌面域'
+phase '5/6 · 桌面域'
 if ! desktop_stack_present; then
     step '桌面域' SKIP '非桌面机器形态（headless/WSL/容器）——ADR-0005'
 else
@@ -131,6 +132,20 @@ else
                 "[ \"\$(gsettings get $schema $key)\" = \"$value\" ]"
         done < <(grep -vE '^[[:space:]]*(#|$)' "$ROOT/configs/desktop.gsettings")
     fi
+fi
+
+phase '6/6 · WSL 形态（工单12 自 WDC probe.sh 移交，安装面 install-packages.sh 同口径）'
+# 默认 shell = bash：本仓 dotfiles 以 bash 为壳；与 root 阶段 chsh 同口径（任何形态一致——
+# 容器 root 冒烟的 /bin/bash 天然满足）
+assert_that '默认 shell = bash' 'root 阶段 chsh——重跑 bootstrap 即收敛' \
+    '[ "$(getent passwd "$(whoami)" | cut -d: -f7)" = "/bin/bash" ]'
+# systemd 生效：仅 WSL 形态断言（wsl.conf 刚写入未重启的中间态会 FAIL——提示语给出收敛路径）；
+# 纯 Linux/容器不在此列（此前从未断言，不扩面）
+if is_wsl; then
+    assert_that 'systemd 生效' '/etc/wsl.conf 已写入但未生效——wsl --shutdown 后下次进入生效，重跑 bootstrap 补装 docker 域' \
+        '[ -d /run/systemd/system ]'
+else
+    step 'systemd 生效' SKIP '非 WSL 形态'
 fi
 
 phase '汇总'
