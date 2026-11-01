@@ -12,3 +12,7 @@ tree
 htop
 fontconfig
 shellcheck
+# 以下两件为 wsl-comfort 残留吸收定夺（ADR-0018）：btop 原为其可选包唯一留存；
+# direnv 原局限于 Homebrew——并入后 bashrc 模板的 direnv 探测钩子真正激活
+btop
+direnv

@@ -10,6 +10,9 @@
 - WSL 便利垫片补全（[ADR-0017](docs/adr/0017-languages-surface-consolidation.md) 补遗，真机 wsl-comfort 残留排查驱动）：open 垫片对存在路径经 wslpath 转 Windows 形式（收编上游同名 shim 实现，原漏收）；补 xdg-open→open 探测门控委托（WSL 无 xdg-utils，`gh --web` 一类调用不再断链）——wsl-comfort 时代 `~/bin` 六 shim（pbcopy/pbpaste/open/xdg-open/fd/bat）确认由声明面接管
 - `.gitignore` 补全防误添加面：ZCode 工具工作区（`.v2c/`、`.video_agent/`、`.zcode/`）、退役面 `/HANDOFF.md` 防回流（f5a8610 退役）、`*.bak` 与编辑器/跨系统垃圾（`.vscode/`、`.idea/`、swap、`.DS_Store`、`Thumbs.db`、`desktop.ini`）、`__pycache__/`——`logs/`（bootstrap 每跑落一份日志）沿用既有忽略；`docs/demo.cast`（录制源）与 `*.gif` 为有意入库资产，保持不忽略
 
+### Added
+- `configs/cli-tools.pkg` 吸收 btop、direnv（[ADR-0018](docs/adr/0018-wsl-comfort-leftover-cleanup.md)）——本机 wsl-comfort（微软 Comfort Shell）残留定夺：btop 原为其可选包唯一留存；direnv 原局限于 Homebrew、bashrc 模板的 direnv 探测钩子自此激活。活体残留（六垫片 / `/home/linuxbrew` / 系统级旧 starship / 日志与脚本 / 孤儿 nvm——归属修正为机器自有非 comfort 所装）经机主授权一次性清理，「只装不删」红线不变；配方与证据入 ADR-0018 与工单 dev-env 11
+
 ## [0.10.0] – 2026-11-01
 
 ### Changed
