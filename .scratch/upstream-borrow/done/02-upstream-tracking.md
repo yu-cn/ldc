@@ -1,5 +1,7 @@
 # 工单 02 — 上游跟进机制（research 笔记 + 吸收账本 + check-upstream.sh）
 
+**Status:** done
+
 ## 背景
 
 LDC 无上游跟进面：docs/ 仅 adr 与 dev-standard，无 research 笔记、无吸收账本、无

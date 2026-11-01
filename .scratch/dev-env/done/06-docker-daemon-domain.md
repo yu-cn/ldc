@@ -1,5 +1,7 @@
 # 工单 06 — Docker daemon 配置域（受保护合并，ADR-0009）
 
+**Status:** done
+
 ## 背景
 
 用户问「LDC 是否考虑了 docker 的配置」。盘点：安装面已有（在位跳过/官方脚本/入组），配置面为零。实测本机（DGX 出厂 Docker 29 + compose/buildx 全齐，daemon.json 不存在）暴露真缺口：json-file 日志无上限可吃满盘。

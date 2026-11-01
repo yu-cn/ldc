@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [ ] ① install-user-tools.sh：mise 换轨 + vp 一次性卸载豁免 + node@lts 默认
 - [ ] ② uv 双钉升级（release + sha256）

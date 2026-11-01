@@ -1,5 +1,7 @@
 # 工单 02 — 双架构一等公民（amd64 / arm64）
 
+**Status:** done
+
 ## 背景
 
 用户常用机器横跨两种架构：DGX Spark（arm64）与多台 amd64 Linux；WDC 实测过的 WSL Ubuntu 亦属 amd64 Linux。盘点结论：全仓库架构敏感点仅 `ldc_arch()` 一处（lazygit 是唯一按架构选资产的下载），uv/vp/starship/gh 源/get.docker.com 自探测，字体 zip 与 apt 包名架构无关——缺的是「显式承诺 + 验证面」，不是代码改造。

@@ -1,5 +1,7 @@
 # 工单 03 — get.sh 供应链钉版与审阅说明
 
+**Status:** done
+
 ## 背景
 
 `scripts/get.sh` 是远程一键引导（curl | bash），当前指 raw main：

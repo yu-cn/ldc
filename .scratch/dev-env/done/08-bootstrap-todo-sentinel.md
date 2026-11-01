@@ -1,5 +1,7 @@
 # 工单 08 — bootstrap exit 2 待办机器标记（LDC_TODO，委托契约机器化）
 
+**Status:** done
+
 **背景**：委托契约的 exit 2 分类长期靠 WDC `setup-ubuntu.sh` grep 本仓 bootstrap 的散文文案（「桌面域：登录」「root 阶段：cd」「git 身份：编辑」）——两仓间无守护的字符串契约：LDC 侧任何文案微调都会让 WDC 的容忍判定静默失效（两个方向都有害：真待办被吞成 rc=0，或桌面域待办误判为真问题）。2026-10-26 会话复核委托实现时识别（主人评估提问「WSL 部分协作是否合适」），主人批准按建议改造。决策与理由全文见 [ADR-0007 补记](../../docs/adr/0007-wdc-ldc-coordination.md)。
 
 **内容**：

@@ -5,6 +5,8 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)（显著变更人为记录、分类归档、每个版本可跳转）；版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
 
 ## [Unreleased]
+### Changed
+- 工单面统一收口（治理批，联动 wdc 0.10.0）——14 张已收口票补 `Status: done` 行并归档 `done/`（dev-env 01–10、upstream-borrow 01–04、git-free-quickstart 01）：flock 运行锁 / 上游跟进面（research 笔记 + 账本 + check-upstream.sh）/ get.sh 钉版 / CI 幂等重跑段经巡检确认均已实现，票面不可读曾致「已实现误判为未实现」（双仓两连实录）；dev-standard §2 补「收口即时置终态」纪律（双仓同源同批）
 
 ## [0.9.0] – 2026-10-31
 

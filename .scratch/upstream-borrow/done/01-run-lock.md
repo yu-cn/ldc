@@ -1,5 +1,7 @@
 # 工单 01 — 收敛入口运行锁（flock）
 
+**Status:** done
+
 ## 背景
 
 bootstrap / `ldc sync` 都会发起 apt 与下载类收敛，当前无并发防护（2026-10-25 grep

@@ -1,5 +1,7 @@
 # 工单 01 — get.sh 远程一键引导 + README 快速开始改造
 
+**Status:** done
+
 > Status: done（2026-10-25 同会话收口）
 
 **目标形态：** 新机器在零前置（不预装 git/curl、不手动 clone）下，粘贴一条命令即可走完

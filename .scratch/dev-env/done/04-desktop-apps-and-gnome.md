@@ -1,5 +1,7 @@
 # 工单 04 — 桌面应用域（VSCode/Chrome）+ GNOME 优化扩充
 
+**Status:** done
+
 ## 背景
 
 用户决策：① 桌面 Linux 把 VSCode、Chrome 等常用 GUI 软件纳入统一配置（对齐 WDC editors 域）；② GNOME 桌面优化配置扩充（对齐 WDC base-windows 注册表域的去噪工作）。范围定稿：VSCode + 扩展清单 + google-chrome-stable；Chrome 偏好不管（YAGNI）。关键事实修正：Chrome 官方源已发布 arm64（2026-10 实测 dl.google.com binary-arm64 在库），双架构无需例外。

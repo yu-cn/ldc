@@ -1,5 +1,7 @@
 # 工单 01 — LDC 骨架落地 + DGX Spark 首接入
 
+**Status:** done
+
 ## 内容
 
 按 HANDOFF.md 第 4 节蓝图写全部骨架：configs 清单与钉子、dotfiles 三模板、lib/common.sh、六阶段脚本、bootstrap/validate 入口、ldc CLI、ADR×5、GLOSSARY/AGENTS/README/LICENSE、pre-commit 钩子、CI×2、.scratch 工单流。然后 `git init`（不 commit）→ validate 全绿 → 本机 bootstrap 试跑 → verify --quick 如实出报告。
