@@ -5,7 +5,9 @@
 #   ldc | ldc status    只读快照（秒级）：与 origin/main 差距 / dotfiles 落点漂移 / 身份状态
 #                         / root 阶段完成度 / 最近 bootstrap 判定行
 #   ldc plan            干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼
-#   ldc sync            全量同步：fetch → 落后则 pull（--ff-only）→ bootstrap → verify 全量
+#   ldc sync [--full]   日常同步：fetch → 落后则 pull（--ff-only）→ bootstrap → verify 全量；
+#                         已收敛且声明未变（收敛账本，ADR-0021）跳过 bootstrap 仅 quick 断言
+#                         秒级复核；--full 强制全量
 #   ldc verify [--full] 机器断言；默认 --quick 秒级，--full 含桌面域 gsettings 读值比对
 #   ldc audit           清单准入对账（只读）：自装未声明 / 已声明未装
 #   ldc triage          dotfiles 落点漂移分流（交互式：逐文件 吸收/重渲染/跳过）
@@ -41,10 +43,13 @@ case $cmd in
   按 bootstrap 的安装面与声明逐项比对，投影重跑收敛会做什么：
   [OK] 已就位 / [PLAN] 将变更 / [SKIP] 不适用 / [INFO] 需机主手工。
   与 verify 互补——verify 断言现状对不对，plan 投影跑一遍会发生什么；sudo/重跑前先看一眼。' ;;
-            sync) echo 'ldc sync — 全量同步（日常一键收敛）
+            sync) echo 'ldc sync [--full] — 日常一键收敛
   顺序：fetch（失败即中止，不做盲同步）→ 落后则 pull --ff-only（本地领先/分叉一律中止交人工；
   钉版形态 detached HEAD 跳过仓库同步、仅收敛机器）→
   bootstrap 全阶段（sudo 需密码时末尾出交接命令）→ verify 全量。
+  快速路径（ADR-0021）：收敛账本记「上次达终态时的 HEAD」，与当前 HEAD 一致且工作区干净——
+  跳过 bootstrap 仅 verify --quick（秒级复核）；账本缺失/损坏/不匹配、工作区脏一律回退全量
+  （假账本会假绿，宁可慢不可假绿）。--full 强制全量。
   任一段 FAIL 即非零退出；bootstrap 有待办（exit 2）时跳过 verify 并列出待办。' ;;
             verify) echo 'ldc verify [--full] — 机器断言
   五组断言：dotfiles 落点与模板一致（ADR-0015 内容断言）/ 身份 / 包清单核销（root 阶段完成度）
@@ -63,7 +68,8 @@ ldc — LDC 开发环境一键工具（裸命令只读快照；仓库在 ~/.ldc 
 
   ldc | ldc status     只读快照（秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap
   ldc plan             干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼
-  ldc sync             全量同步：fetch → pull → bootstrap → verify 全量
+  ldc sync [--full]   日常同步：fetch → pull → bootstrap → verify 全量；已收敛且声明未变
+                        走快速路径仅 quick 断言（收敛账本，ADR-0021）；--full 强制全量
   ldc verify [--full]  机器断言（默认 --quick；--full 含桌面域读值比对）
   ldc audit            清单准入对账（只读）：自装未声明 / 已声明未装
   ldc triage           dotfiles 落点漂移分流（逐文件 吸收/重渲染，交互式）
@@ -194,6 +200,11 @@ case $cmd in
         ;;
 
     sync)
+        full=0
+        if [ $# -gt 0 ]; then
+            if [ "$1" = "--full" ]; then full=1; shift
+            else printf 'ldc: sync 不认得参数「%s」（可用：--full 强制全量）\n' "$1" >&2; exit 1; fi
+        fi
         phase 'ldc sync · 仓库'
         if ! git -C "$repo" remote get-url origin >/dev/null 2>&1; then
             step '仓库' INFO '无 origin 远端——跳过仓库同步'
@@ -220,6 +231,26 @@ case $cmd in
             fi
         fi
         phase 'ldc sync · bootstrap'
+        # 快速路径（ADR-0021）：账本 commit == HEAD 且工作区干净 → 跳过 bootstrap 仅 verify --quick。
+        # 脏树守卫：未提交的声明编辑不改 HEAD——只判账本会漏，工作区脏一律全量；账本缺失/损坏/
+        # 不匹配回退全量（假账本会假绿，宁可慢不可假绿）
+        if [ "$full" -eq 0 ]; then
+            head_sha=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
+            if [ -n "$head_sha" ] \
+               && [ -z "$(git -C "$repo" status --porcelain 2>/dev/null)" ] \
+               && led_sha=$(converged_ledger_get) \
+               && [ "$led_sha" = "$head_sha" ]; then
+                step 'bootstrap' SKIP "快速路径——已收敛且声明未变（账本 commit ${head_sha:0:7} == HEAD，ADR-0021）"
+                phase 'ldc sync · verify（快速路径 quick）'
+                if bash "$repo/scripts/verify-machine.sh" --quick; then
+                    step '快速路径' OK '全绿——声明有变（新提交）或 --full 时回全量'
+                    exit 0
+                else
+                    step '快速路径' FAIL 'quick 断言未过——ldc sync --full 全量收敛排查'
+                    exit 1
+                fi
+            fi
+        fi
         rc=0
         bash "$repo/bootstrap.sh" || rc=$?
         if [ "$rc" -eq 1 ]; then

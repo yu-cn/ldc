@@ -343,6 +343,49 @@ drift_direction() {
     return 0
 }
 
+converged_ledger_file() {
+    # 收敛账本（ADR-0021）：记「bootstrap 上次达终态时的 HEAD」——ldc sync 快速路径判定依据。
+    # 两行纯文本：行1 = 40 位 commit sha、行2 = ISO8601 时刻（时刻仅供人读，判定只读行1）。
+    # 与渲染账本（rendered.sha256 管「落点↔模板」指纹）同目录同模式各管各的：本账本管机器
+    # 整体收敛事实。机器本地状态不入仓库（ADR-0004 模式）；可丢——缺失即快速路径失效回退全量
+    printf '%s\n' "${XDG_STATE_HOME:-$HOME/.local/state}/ldc/converged"
+}
+
+converged_ledger_set() {
+    # converged_ledger_set <40位sha> —— 记账（tmp+mv 原子落盘，对齐 render_state_set）；失败非零
+    local f tmp
+    f=$(converged_ledger_file)
+    mkdir -p "$(dirname "$f")"
+    tmp=$(mktemp "$(dirname "$f")/.converged.XXXXXX") || return 1
+    printf '%s\n%s\n' "$1" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$tmp" && mv "$tmp" "$f"
+}
+
+converged_ledger_get() {
+    # converged_ledger_get —— 上次终态收敛的 commit（行1 经 40 位 hex 严格校验；缺失/损坏返回 1）
+    local f
+    f=$(converged_ledger_file)
+    [ -f "$f" ] || return 1
+    head -n1 "$f" | grep -Eq '^[0-9a-f]{40}$' || return 1
+    head -n1 "$f"
+}
+
+converged_ledger_record() {
+    # converged_ledger_record [详情] —— bootstrap 终态尾部记账 = 当前 HEAD（ADR-0021；终态口径
+    # exit 0 / 形态级终态由调用方保证）。HEAD 不可得（未 git init）或落盘失败不记——下次
+    # ldc sync 回退全量，安全侧
+    local head
+    head=$(git -C "$(ldc_repo)" rev-parse HEAD 2>/dev/null || true)
+    if [ -z "$head" ]; then
+        step '收敛账本' INFO '尚无 git HEAD（未 init？）——不记账，下次 ldc sync 全量（安全侧）'
+        return 0
+    fi
+    if converged_ledger_set "$head"; then
+        step '收敛账本' OK "已记账 commit ${head:0:7}${1:+ —— $1}"
+    else
+        step '收敛账本' INFO '记账未成——下次 ldc sync 回退全量（安全侧）'
+    fi
+}
+
 git_identity_ok() {
     # 身份经 include 链生效（效果级，与 verify 断言同口径）；只判非空不取值——身份内容不进日志
     [ -n "$(git config --global --includes --get user.name 2>/dev/null)" ] && \

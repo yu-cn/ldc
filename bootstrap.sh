@@ -128,6 +128,12 @@ main() {
         return 1
     fi
     if [ "$pending" -gt 0 ]; then
+        # 形态级终态记账（ADR-0021）：待办集合恰为 {形态级桌面 SKIP}（非桌面机器——WSL/headless/
+        # 容器，登录桌面重跑永不适用；与委托方 WDC setup-ubuntu.sh 的严格容忍分支同款语义）——
+        # 机器已达其形态的终态，记收敛账本。exit 2 与 [LDC_TODO=desktop] 标记照常输出（契约零变化）
+        if [ -z "$handoff" ] && [ "$desktop_pending" -eq 1 ] && ! desktop_stack_present && git_identity_ok; then
+            converged_ledger_record '形态级终态（待办仅桌面域 N/A）；ldc sync 快速路径依据'
+        fi
         step 'bootstrap' PENDING "$pending 项待办手工步骤（见下）"
         echo
         if [ -n "$handoff" ]; then
@@ -144,6 +150,9 @@ main() {
         git_identity_ok || echo '  · git 身份：编辑 ~/.gitidentity 填本机 name/email，然后 git add -A && git commit -m "Initial LDC scaffold" [LDC_TODO=git-identity]'
         return 2
     fi
+    # 收敛账本（ADR-0021）：全量成功尾部记账（置于判定行之前——bootstrap OK 保持日志最后一条
+    # [状态] 行，ldc status 的「最近 bootstrap 判定行」抓取口径不变）
+    converged_ledger_record 'ldc sync 快速路径依据'
     step 'bootstrap' OK '全部阶段完成——机器与声明一致'
     return 0
 }
