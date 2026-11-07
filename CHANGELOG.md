@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-07
+
 ### Added
 - `ldc sync` 收敛账本快速路径（[ADR-0021](docs/adr/0021-convergence-ledger-fast-path.md)，联动 wdc 工单42 同构）：已收敛且声明未变（账本记「上次达终态时的 HEAD」== 当前 HEAD 且工作区干净）时跳过 bootstrap，仅 verify --quick 秒级复核——日常收敛免重跑幂等 SKIP 的七阶段。账本缺失/损坏/不匹配、工作区脏（未提交的声明编辑）一律回退全量（假账本会假绿，宁可慢不可假绿）；`ldc sync --full` 强制全量。终态口径含形态级终态：非桌面机器（WSL/headless/容器）的桌面域 SKIP 是形态级 N/A 不算活待办（与委托方 WDC 的容忍分支同款语义），bootstrap 退出码与 `[LDC_TODO=desktop]` 契约面零变化
 - 钉子新鲜度周巡检 workflow（[ADR-0020](docs/adr/0020-pin-freshness-patrol.md)）：GitHub API 对五钉子（uv / mise / starship / lazygit / nerd-fonts）的上游 `releases/latest`，workflow summary 列「钉 X / 上游 Y」明细——只提醒不升级（钉子升级 = 人的决定 + sha256 同 commit 重算，ADR-0011，自动化会绕过重算纪律），恒 exit 0 不红 badge（钉子滞后于上游是常态非事故）
@@ -122,7 +124,8 @@
 ### Added
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
-[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/yu-cn/ldc/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/yu-cn/ldc/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/yu-cn/ldc/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/yu-cn/ldc/compare/v0.8.0...v0.9.0
