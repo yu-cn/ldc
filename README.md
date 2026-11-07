@@ -85,11 +85,11 @@ bashrc（历史/别名/fzf/zoxide/starship + 工具布局事实 [env.sh](scripts
 
 | 命令 | 用途 |
 |---|---|
-| `ldc` | 只读快照（裸命令默认，秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap |
+| `ldc` | 只读快照（裸命令默认，秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap；`--json` 单行机器可读出口 |
 | `ldc plan` | 干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼 |
 | `ldc sync [--full]` | 日常一键同步（fetch → pull --ff-only → bootstrap → verify 全量；已收敛且声明未变走快速路径仅 quick 断言（[ADR-0021](docs/adr/0021-convergence-ledger-fast-path.md)），`--full` 强制全量） |
 | `ldc verify [--full]` / `ldc audit` | 机器断言（默认 --quick）/ 清单准入对账（自装未声明 / 已声明未装，只读） |
-| `ldc triage` / `ldc log` / `ldc help` | dotfiles 落点漂移分流 / 最近日志尾部 / 帮助与版本 |
+| `ldc triage` / `ldc log` / `ldc help` | dotfiles 落点漂移分流 / 最近日志尾部 / 帮助与版本（子命令后接 `-h` 出该命令详解；Tab 补全词表解析自脚本单一来源） |
 | `bash bootstrap.sh` | 完整收敛（日常改了配置后重跑） |
 | `bash validate.sh` | 只做无副作用校验（bash -n + shellcheck + 清单格式） |
 | `bash scripts/verify-machine.sh [--quick]` | 机器断言的脚本直跑形态 |
