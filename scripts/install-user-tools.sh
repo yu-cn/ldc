@@ -3,6 +3,8 @@
 #   vp 退役迁移（一次性豁免，ADR-0016）/ uv / mise（钉 configs/*-version，管 Node 等语言）
 #   / starship / lazygit（钉 configs/lazygit-version）
 #   / JetBrainsMono NF 字体（钉 configs/nerd-fonts-version；仅 gsettings 机器装）
+# 四件 tar.gz 钉子安装共用 common.sh 的 pinned_tarball_install（下载→sha256→解压→install
+# 同构面的单一来源；各工具资产命名例外注释保留在调用点）
 # nvm 共存政策（ADR-0003）：不卸 nvm、不碰其块——它是机器自留地；本机 node 归属以 .bashrc.local 后加载胜出
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -10,46 +12,26 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "$ROOT/scripts/lib/common.sh"
 fail=0
 mkdir -p "$HOME/.local/bin"
+# tmp 登记 + 退出/中断清理（common.sh ldc_tmp_*）：钉子下载与字体解压的临时目录，中断也不在 /tmp 留残
+trap ldc_tmp_cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 phase 'user 工具 · uv（管 Python，钉子安装）'
 UV_VERSION="$(pin_of uv-version)" || exit 1
-uv_bin="$HOME/.local/bin/uv"
-uv_current="$("$uv_bin" --version 2>/dev/null || true)"
-if [ -x "$uv_bin" ] && version_matches "$uv_current" "$UV_VERSION"; then
-    step uv SKIP "= 钉子 $UV_VERSION"
-else
-    arch="$(ldc_arch)" || fail=$((fail + 1))
-    if [ -n "${arch:-}" ]; then
-        # uv 资产命名例外（rust triple）：amd64→x86_64-unknown-linux-gnu，arm64→aarch64-unknown-linux-gnu
-        case $arch in
-            amd64) uv_asset=x86_64-unknown-linux-gnu ;;
-            arm64) uv_asset=aarch64-unknown-linux-gnu ;;
-        esac
-        url="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${uv_asset}.tar.gz"
-        tmp=$(mktemp -d)
-        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011；哈希与官方 .sha256 侧车文件一致）再解压安装
-        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
-            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
-            want="$(pin_sha256 uv-version "$arch" || true)"
-            if [ -n "$want" ] && [ "$got" != "$want" ]; then
-                step 'uv 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
-                fail=$((fail + 1))
-            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null \
-                 && install -m 0755 "$tmp/uv-${uv_asset}/uv" "$uv_bin" \
-                 && install -m 0755 "$tmp/uv-${uv_asset}/uvx" "$HOME/.local/bin/uvx"; then
-                [ -z "$want" ] && step 'uv 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
-                if [ -n "$uv_current" ]; then step uv CHANGED "升级 → $UV_VERSION（$uv_bin）"
-                else step uv OK "$UV_VERSION → $uv_bin"; fi
-            else
-                step uv FAIL "解压/安装失败（$url）"
-                fail=$((fail + 1))
-            fi
-        else
-            step uv FAIL "下载失败（$url）"
-            fail=$((fail + 1))
-        fi
-        rm -rf "$tmp"
-    fi
+# uv 资产命名例外（rust triple）：amd64→x86_64-unknown-linux-gnu，arm64→aarch64-unknown-linux-gnu
+arch=$(ldc_arch 2>/dev/null) || arch=''
+case $arch in
+    amd64) uv_asset=x86_64-unknown-linux-gnu ;;
+    arm64) uv_asset=aarch64-unknown-linux-gnu ;;
+    *) step uv FAIL '架构不受支持（amd64/arm64，ADR-0006）'; fail=$((fail + 1)) ;;
+esac
+if [ -n "${uv_asset:-}" ]; then
+    pinned_tarball_install uv uv-version "$HOME/.local/bin/uv" \
+        "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${uv_asset}.tar.gz" \
+        "uv-${uv_asset}/uv:$HOME/.local/bin/uv" \
+        "uv-${uv_asset}/uvx:$HOME/.local/bin/uvx" \
+        || fail=$((fail + 1))
 fi
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
 
@@ -74,39 +56,19 @@ fi
 
 phase 'user 工具 · mise（管 Node 等语言）'
 MISE_VERSION="$(pin_of mise-version)" || exit 1
-mise_bin="$HOME/.local/bin/mise"
-mise_current="$("$mise_bin" --version 2>/dev/null || true)"
-if [ -x "$mise_bin" ] && version_matches "$mise_current" "$MISE_VERSION"; then
-    step mise SKIP "= 钉子 $MISE_VERSION"
-else
-    arch="$(ldc_arch)" || fail=$((fail + 1))
-    if [ -n "${arch:-}" ]; then
-        # mise 资产命名例外：amd64→x64（GitHub release 段名；arm64 同名无例外）
-        mise_arch=$arch
-        [ "$mise_arch" = amd64 ] && mise_arch=x64
-        url="https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/mise-v${MISE_VERSION}-linux-${mise_arch}.tar.gz"
-        tmp=$(mktemp -d)
-        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011——哈希自官方 release 资产实算）再解压安装
-        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
-            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
-            want="$(pin_sha256 mise-version "$arch" || true)"
-            if [ -n "$want" ] && [ "$got" != "$want" ]; then
-                step 'mise 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
-                fail=$((fail + 1))
-            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/mise/bin/mise" "$mise_bin"; then
-                [ -z "$want" ] && step 'mise 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
-                if [ -n "$mise_current" ]; then step mise CHANGED "升级 → $MISE_VERSION（$mise_bin）"
-                else step mise OK "$MISE_VERSION → $mise_bin"; fi
-            else
-                step mise FAIL "解压/安装失败（$url）"
-                fail=$((fail + 1))
-            fi
-        else
-            step mise FAIL "下载失败（$url）"
-            fail=$((fail + 1))
-        fi
-        rm -rf "$tmp"
-    fi
+mise_bin="$HOME/.local/bin/mise"   # 下方 node@lts 段同用
+# mise 资产命名例外：amd64→x64（GitHub release 段名；arm64 同名无例外）
+arch=$(ldc_arch 2>/dev/null) || arch=''
+case $arch in
+    amd64) mise_arch=x64 ;;
+    arm64) mise_arch=arm64 ;;
+    *) step mise FAIL '架构不受支持（amd64/arm64，ADR-0006）'; fail=$((fail + 1)) ;;
+esac
+if [ -n "${mise_arch:-}" ]; then
+    pinned_tarball_install mise mise-version "$HOME/.local/bin/mise" \
+        "https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/mise-v${MISE_VERSION}-linux-${mise_arch}.tar.gz" \
+        "mise/bin/mise:$HOME/.local/bin/mise" \
+        || fail=$((fail + 1))
 fi
 # 默认环境 node@lts（对齐原 vp env default lts 语义——每次收敛重发即随最新 LTS，零维护）；
 # ensure 型步骤报 OK 不报 CHANGED（对齐 vp env install 旧例）：幂等重跑零 [CHANGED] 基线由本体安装行承担
@@ -129,79 +91,35 @@ fi
 
 phase 'user 工具 · starship'
 SS_VERSION="$(pin_of starship-version)" || exit 1
-ss_bin="$HOME/.local/bin/starship"
-ss_current="$("$ss_bin" --version 2>/dev/null || true)"
-if [ -x "$ss_bin" ] && version_matches "$ss_current" "$SS_VERSION"; then
-    step starship SKIP "= 钉子 $SS_VERSION"
-else
-    # 资产命名例外（rust triple）：amd64→x86_64-unknown-linux-gnu，arm64→aarch64-unknown-linux-musl
-    #（starship 对 aarch64 只发 musl 静态包，glibc 系统直接可用）
-    arch="$(ldc_arch)" || fail=$((fail + 1))
-    if [ -n "${arch:-}" ]; then
-        case $arch in
-            amd64) ss_asset=x86_64-unknown-linux-gnu ;;
-            arm64) ss_asset=aarch64-unknown-linux-musl ;;
-        esac
-        url="https://github.com/starship/starship/releases/download/v${SS_VERSION}/starship-${ss_asset}.tar.gz"
-        tmp=$(mktemp -d)
-        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011）再解压安装——不符即拒绝
-        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
-            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
-            want="$(pin_sha256 starship-version "$arch" || true)"
-            if [ -n "$want" ] && [ "$got" != "$want" ]; then
-                step 'starship 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
-                fail=$((fail + 1))
-            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/starship" "$ss_bin"; then
-                [ -z "$want" ] && step 'starship 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
-                if [ -n "$ss_current" ]; then step starship CHANGED "升级 → $SS_VERSION（$ss_bin）"
-                else step starship OK "$SS_VERSION → $ss_bin"; fi
-            else
-                step starship FAIL "解压/安装失败（$url）"
-                fail=$((fail + 1))
-            fi
-        else
-            step starship FAIL "下载失败（$url）"
-            fail=$((fail + 1))
-        fi
-        rm -rf "$tmp"
-    fi
+# 资产命名例外（rust triple）：amd64→x86_64-unknown-linux-gnu，arm64→aarch64-unknown-linux-musl
+#（starship 对 aarch64 只发 musl 静态包，glibc 系统直接可用）
+arch=$(ldc_arch 2>/dev/null) || arch=''
+case $arch in
+    amd64) ss_asset=x86_64-unknown-linux-gnu ;;
+    arm64) ss_asset=aarch64-unknown-linux-musl ;;
+    *) step starship FAIL '架构不受支持（amd64/arm64，ADR-0006）'; fail=$((fail + 1)) ;;
+esac
+if [ -n "${ss_asset:-}" ]; then
+    pinned_tarball_install starship starship-version "$HOME/.local/bin/starship" \
+        "https://github.com/starship/starship/releases/download/v${SS_VERSION}/starship-${ss_asset}.tar.gz" \
+        "starship:$HOME/.local/bin/starship" \
+        || fail=$((fail + 1))
 fi
 
 phase 'user 工具 · lazygit'
 LG_VERSION="$(pin_of lazygit-version)" || exit 1
-lg_bin="$HOME/.local/bin/lazygit"
-lg_current="$("$lg_bin" --version 2>/dev/null || true)"
-if [ -x "$lg_bin" ] && version_matches "$lg_current" "$LG_VERSION"; then
-    step lazygit SKIP "= 钉子 $LG_VERSION"
-else
-    arch="$(ldc_arch)" || fail=$((fail + 1))
-    if [ -n "${arch:-}" ]; then
-        # lazygit 资产命名例外：x86_64 资产叫 linux_x86_64 而非 linux_amd64（arm64 同名无例外）
-        lg_arch=$arch
-        [ "$lg_arch" = amd64 ] && lg_arch=x86_64
-        url="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_linux_${lg_arch}.tar.gz"
-        tmp=$(mktemp -d)
-        # 先落盘校验 sha256（钉子文件 sha256 行，ADR-0011）再解压安装——不符即拒绝
-        if curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
-            got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
-            want="$(pin_sha256 lazygit-version "$arch" || true)"
-            if [ -n "$want" ] && [ "$got" != "$want" ]; then
-                step 'lazygit 校验和' FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
-                fail=$((fail + 1))
-            elif tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null && install -m 0755 "$tmp/lazygit" "$lg_bin"; then
-                [ -z "$want" ] && step 'lazygit 校验和' INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉）'
-                if [ -n "$lg_current" ]; then step lazygit CHANGED "升级 → $LG_VERSION（$lg_bin）"
-                else step lazygit OK "$LG_VERSION → $lg_bin"; fi
-            else
-                step lazygit FAIL "解压/安装失败（$url）"
-                fail=$((fail + 1))
-            fi
-        else
-            step lazygit FAIL "下载失败（$url）"
-            fail=$((fail + 1))
-        fi
-        rm -rf "$tmp"
-    fi
+# lazygit 资产命名例外：x86_64 资产叫 linux_x86_64 而非 linux_amd64（arm64 同名无例外）
+arch=$(ldc_arch 2>/dev/null) || arch=''
+case $arch in
+    amd64) lg_arch=x86_64 ;;
+    arm64) lg_arch=arm64 ;;
+    *) step lazygit FAIL '架构不受支持（amd64/arm64，ADR-0006）'; fail=$((fail + 1)) ;;
+esac
+if [ -n "${lg_arch:-}" ]; then
+    pinned_tarball_install lazygit lazygit-version "$HOME/.local/bin/lazygit" \
+        "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_linux_${lg_arch}.tar.gz" \
+        "lazygit:$HOME/.local/bin/lazygit" \
+        || fail=$((fail + 1))
 fi
 
 phase 'user 工具 · JetBrainsMono NF 字体'
@@ -218,6 +136,7 @@ else
         url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${NF_VERSION}/JetBrainsMono.zip"
         mkdir -p "$fontdir"
         tmp=$(mktemp -d)
+        ldc_tmp_register "$tmp"
         # 校验 sha256（钉子文件无 arch 行，字体包不分架构，ADR-0011）再解压
         if curl -fsSL -o "$tmp/JetBrainsMono.zip" "$url"; then
             got=$(sha256sum "$tmp/JetBrainsMono.zip" | awk '{print $1}')
@@ -252,23 +171,27 @@ if ! desktop_stack_present; then
 elif ! have code; then
     step 'VSCode 扩展' INFO 'code 未装——root 阶段交接完成后重跑 bootstrap'
 else
-    # 幂等安装：--install-extension 对已装扩展快速通过；机器自装扩展不在清单不核销（ADR-0003）
-    ext_total=0
-    ext_ok=0
-    ext_missing=''
-    while read -r ext; do
-        ext_total=$((ext_total + 1))
-        if code --install-extension "$ext" >/dev/null 2>&1; then
-            ext_ok=$((ext_ok + 1))
-        else
-            ext_missing="$ext_missing $ext"
-        fi
-    done < <(pkg_list vscode-extensions.txt)
+    # 幂等安装 fast-path：先读在装清单做差集（与 verify/plan 的 comm 口径同源），只对缺失件走
+    # marketplace——已装件零网络往返；机器自装扩展不在清单不核销（ADR-0003）
+    ext_missing=$(comm -23 <(pkg_list vscode-extensions.txt | sort) <(code --list-extensions 2>/dev/null | sort))
+    ext_total=$(pkg_list vscode-extensions.txt | grep -c . || true)
     if [ -z "$ext_missing" ]; then
-        step 'VSCode 扩展' OK "$ext_ok/$ext_total 就位"
+        step 'VSCode 扩展' OK "$ext_total/$ext_total 就位"
     else
-        step 'VSCode 扩展' FAIL "失败：$ext_missing"
-        fail=$((fail + 1))
+        ext_fail='' ext_installed=0
+        for ext in $ext_missing; do
+            if code --install-extension "$ext" >/dev/null 2>&1; then
+                ext_installed=$((ext_installed + 1))
+            else
+                ext_fail="$ext_fail $ext"
+            fi
+        done
+        if [ -z "$ext_fail" ]; then
+            step 'VSCode 扩展' OK "补装 $ext_installed 件（$ext_total/$ext_total 就位）"
+        else
+            step 'VSCode 扩展' FAIL "失败：$ext_fail"
+            fail=$((fail + 1))
+        fi
     fi
 fi
 

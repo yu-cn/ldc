@@ -94,6 +94,70 @@ pin_sha256() {
     [ -n "$val" ] && printf '%s\n' "$val"
 }
 
+# --- 钉子 tar.gz 安装与 tmp 登记（uv/mise/starship/lazygit 四段同构面收编的单一来源） ---
+
+LDC_TMP_DIRS=()
+
+ldc_tmp_register() {
+    # ldc_tmp_register <目录> —— 登记临时目录；调用方 trap ldc_tmp_cleanup EXIT 后，
+    # 正常退出与中断（INT/TERM 经 exit 转发）都统一清掉，不在 /tmp 留残
+    LDC_TMP_DIRS+=("$1")
+}
+
+ldc_tmp_cleanup() {
+    # 登记目录逐个清除（已由各步骤自行 rm 的条目重复删除无害）
+    local d
+    for d in ${LDC_TMP_DIRS[@]+"${LDC_TMP_DIRS[@]}"}; do rm -rf "$d"; done
+}
+
+pinned_tarball_install() {
+    # pinned_tarball_install <工具名> <钉子文件名> <bin路径> <url> <解压内相对路径>:<落点绝对路径>…
+    # 钉子 tar.gz 安装单一来源（原四段逐字拷贝收编，2026-11-07）：已装且版本匹配 → SKIP；
+    # 下载 → 落盘验 sha256（pin_sha256，ADR-0011）→ 解压 → 逐件 install 0755；升级报 CHANGED、
+    # 新装报 OK。url 与解压内路径由调用点拼装（各工具资产命名例外随调用点注释）；
+    # 钉子值本函数自读（调用点为拼 url 读同一文件，同一次运行内必然一致）。
+    # 返回 0 成功 / 1 失败（调用方计 fail）。sha256 缺行为防御性 INFO（validate 已必配，ADR-0020）。
+    # 临时目录经 ldc_tmp_register 登记——调用方应 trap ldc_tmp_cleanup EXIT（install-user-tools 已接）
+    local name=$1 pinfile=$2 bin=$3 url=$4 pair pin cur arch tmp got want
+    pin=$(pin_of "$pinfile") || { step "$name" FAIL "钉子文件不可读（configs/$pinfile）"; return 1; }
+    cur="$("$bin" --version 2>/dev/null || true)"
+    if [ -x "$bin" ] && version_matches "$cur" "$pin"; then
+        step "$name" SKIP "= 钉子 $pin"
+        return 0
+    fi
+    arch=$(ldc_arch 2>/dev/null) || { step "$name" FAIL '架构不受支持（amd64/arm64，ADR-0006）'; return 1; }
+    tmp=$(mktemp -d)
+    ldc_tmp_register "$tmp"
+    if ! curl -fsSL "$url" -o "$tmp/asset.tar.gz" 2>/dev/null; then
+        step "$name" FAIL "下载失败（$url）"
+        return 1
+    fi
+    got=$(sha256sum "$tmp/asset.tar.gz" | awk '{print $1}')
+    want=$(pin_sha256 "$pinfile" "$arch" || true)
+    if [ -n "$want" ] && [ "$got" != "$want" ]; then
+        step "$name 校验和" FAIL "不符（预期 $want / 实得 $got）——疑似供应链异常，拒绝安装（ADR-0011）"
+        return 1
+    fi
+    [ -z "$want" ] && step "$name 校验和" INFO '钉子未含 sha256 行——未校验（按 ADR-0011 补钉；validate 已必配）'
+    if ! tar -xzf "$tmp/asset.tar.gz" -C "$tmp" 2>/dev/null; then
+        step "$name" FAIL "解压失败（$url）"
+        return 1
+    fi
+    shift 4
+    for pair in "$@"; do
+        if ! install -m 0755 "$tmp/${pair%%:*}" "${pair#*:}"; then
+            step "$name" FAIL "安装失败（$tmp/${pair%%:*} → ${pair#*:}）"
+            return 1
+        fi
+    done
+    if [ -n "$cur" ]; then
+        step "$name" CHANGED "升级 → $pin（$bin）"
+    else
+        step "$name" OK "$pin → $bin"
+    fi
+    return 0
+}
+
 pkg_list() {
     # pkg_list <清单名> —— 输出包名逐行（去注释与空行）
     local f
@@ -104,7 +168,8 @@ pkg_list() {
 
 pkg_install() {
     # pkg_install <包名>… —— 包安装薄抽象（决策表：apt 先行，多发行版日后增量加）
-    # 幂等：dpkg 已装跳过；失败逐包报告不抛异常（调用方收集），任一失败返回 1。需 root。
+    # 幂等：dpkg 已装逐包报 SKIP；缺失件合并为一次 apt 事务（用 apt 自带的依赖解析与事务原子性，
+    # 红线 11——不重写包管理）；整批失败退回逐包重试定位元凶。返回失败件数（0 = 全成）。需 root。
     local pkg rc=0 ver
     if ! have apt-get; then
         log 'ERROR: 未找到 apt-get——LDC v1 仅支持 Ubuntu/Debian（apt 系）'
