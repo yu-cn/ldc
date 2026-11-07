@@ -1,18 +1,19 @@
-# 上游吸收账本（ADR-0014）
+# 参考资源吸收账本（ADR-0014）
 
-记录每次对 microsoft/WindowsDeveloperConfig 的检查与吸收（对标面 = wsl-comfort，ADR-0014）。
+记录每次对 microsoft/WindowsDeveloperConfig 的检查与借鉴吸收（对标参考 = wsl-comfort；
+它是参考资源不是 LDC 的上游——LDC 独立自持，2026-11-07 主人定性，ADR-0014 补记）。
 基线的机器可读版本在 [upstream-baseline.json](./upstream-baseline.json)，由
 `scripts/check-upstream.sh -UpdateBaseline` 维护。
 
 ## 检查记录
 
-| 日期 | 上游 HEAD | 结论 | 备注 |
+| 日期 | 参考 HEAD | 结论 | 备注 |
 |---|---|---|---|
 | 2026-10-25 | fb564611cf | 建立基线 | wsl-comfort apt 清单真源（`COMFORT_APT_*` 数组 15 包）；深版调研（2026-10-19，一手核实）在 wdc 仓 `docs/research/`，本仓视角见 [research/windowsdeveloperconfig.md](research/windowsdeveloperconfig.md) |
 
 ## 吸收记录
 
-| 日期 | 吸收内容 | 上游来源 | 进入本仓库的位置 |
+| 日期 | 吸收内容 | 参考来源 | 进入本仓库的位置 |
 |---|---|---|---|
 | 2026-10-25 | 运行锁思想（全局互斥防并发收敛） | 引擎 `Global\WindowsDevConfigSetup` | ADR-0013 / bootstrap.sh flock（对等实现；与 wdc 0ad0788 同源评估、各仓各面） |
 

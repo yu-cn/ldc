@@ -57,7 +57,7 @@ cd <repo> && sudo bash scripts/install-packages.sh
 <summary><strong>一条命令得到什么</strong>（点开看完整清单）</summary>
 
 **系统**（root 阶段，[base-linux](configs/base-linux.pkg) + [cli-tools](configs/cli-tools.pkg)）
-build-essential · git · curl/wget · jq · fzf / ripgrep / bat / fd / zoxide / eza / git-delta / tree / htop / shellcheck · gh（官方 apt 源）· Docker Engine（download.docker.com [官方 apt 源](docs/adr/0019-docker-vendor-apt-repo.md)；已装则跳过，默认用户入 docker 组；daemon.json [受保护合并](configs/docker-daemon.json)声明日志轮转与 live-restore——机器自有键保留，不自动重启，[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）
+build-essential · git · curl/wget · jq · fzf / ripgrep / bat / fd / zoxide / eza / git-delta / btop / direnv / htop / shellcheck · gh（官方 apt 源）· Docker Engine（download.docker.com [官方 apt 源](docs/adr/0019-docker-vendor-apt-repo.md)；已装则跳过，默认用户入 docker 组；daemon.json [受保护合并](configs/docker-daemon.json)声明日志轮转与 live-restore——机器自有键保留，不自动重启，[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）
 
 **可选包组**（不随 bootstrap，[ADR-0010](docs/adr/0010-optional-package-groups.md)）
 常用但非每台必需的工具按组平铺在 [configs/](configs/)（[media-doc](configs/media-doc.pkg)：pandoc + ffmpeg · [etckeeper](configs/etckeeper.pkg)：/etc 纳入 git 审计，apt 事务与机主自改全程留痕），`sudo bash scripts/install-packages.sh <组名>` 显式指名安装——装没装由 dpkg 记账，verify 不断言；新增可选组只需加一个清单文件。

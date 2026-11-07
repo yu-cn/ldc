@@ -9,6 +9,27 @@
 
 ## [Unreleased]
 
+### Added
+- 钉子新鲜度周巡检 workflow（[ADR-0020](docs/adr/0020-pin-freshness-patrol.md)）：GitHub API 对五钉子（uv / mise / starship / lazygit / nerd-fonts）的上游 `releases/latest`，workflow summary 列「钉 X / 上游 Y」明细——只提醒不升级（钉子升级 = 人的决定 + sha256 同 commit 重算，ADR-0011，自动化会绕过重算纪律），恒 exit 0 不红 badge（钉子滞后于上游是常态非事故）
+- CI 冒烟矩阵补 debian:12 amd64 腿（双发行版 × 双架构）：README / 预检承诺的 ubuntu/debian 双发行版自此均有实证腿——Debian 命名差异（fdfind/batcat）由兼容链接段真实覆盖，此前仅 ubuntu:24.04 双架构
+
+### Changed
+- Docker 安装面收编 download.docker.com 官方 apt 源（[ADR-0019](docs/adr/0019-docker-vendor-apt-repo.md)）——get.docker.com 管道脚本退役（全仓最后一个 curl | sh 安装面），与 gh / VSCode / Chrome 同款 `add_vendor_repo` 配方（keyring + 源 + 一次 apt 事务装 docker-ce 与 buildx / compose 插件）；marker 判重兼容既有安装（get.docker.com 装过的机器幂等直入，无需迁移）；版本不钉与 gh 同口径（apt 事务与 dpkg 账本即记账，红线 11）
+- 四段钉子安装器收编单一来源：uv / mise / starship / lazygit 的「下载 → sha256 落盘验 → 解压 → install」同构面（约 200 行四份拷贝、文案已现漂移）收敛为 common.sh `pinned_tarball_install`，资产命名例外注释保留在调用点；临时目录统一登记（`ldc_tmp_*`）+ trap 清理，中断不在 /tmp 留残
+- 包安装合批：`pkg_install` 缺失件合并为单次 apt 事务（新机收敛不再逐包 ~20 次独立事务；整批失败退回逐包定位元凶），逐包 `[OK]/[SKIP]` 口径不变——用 apt 自带的事务与依赖解析（红线 11）
+- VSCode 扩展安装 fast-path：先 `code --list-extensions` 做差集（与 verify / plan 同款 comm 口径）只装缺失件——已装件零 marketplace 往返，每次收敛省 30 次网络请求
+- `ldc status` 远端判读带 5s 超时 + 禁交互（坏网络不再挂起「秒级快照」；fetch 未达按本地缓存判读并 INFO 标注）；get.sh 复用路径显式传 tag 即升级重钉（同 tag 重跑 no-op 幂等，原仅作用于 fresh clone）
+- validate 钉子检查收紧为 sha256 行必配（[ADR-0020](docs/adr/0020-pin-freshness-patrol.md) 对 ADR-0011 的机械收口）：分架构四钉须双 arch 行齐备、nerd-fonts 须无 arch 行——缺即 FAIL（原「有则查格式、无则放行」拦不住「升版本忘更哈希」落地）
+- wsl-comfort 定性为**参考资源非上游**（主人 2026-11-07 定性，[ADR-0014 补记](docs/adr/0014-upstream-tracking.md)）：LDC 独立自持、不跟随其演进——check-upstream / 吸收账本 / `ldc status` 的措辞与输出标签由「上游」改为「参考资源」，机制、文件名与 `-UpdateBaseline` 参数不动；LDC 唯一的真上游关系在钉子资产一侧（ADR-0020 巡检盯的那侧）
+- bootstrap 日志轮转：`logs/` 保留最近 20 份，更旧的随跑清理
+
+### Fixed
+- `ldc sync` fetch 失败不再静默继续——原按陈旧 origin/main 判「一致」可能漏拉仍报全绿（盲同步风险），现 FAIL 中止
+- 钉版形态（get.sh LDC_TAG 钉 tag 后 detached HEAD）不再误判：`ldc status` 原对钉版机误报「落后 N」，`ldc sync` 原在 pull 上撞 detached HEAD 失败——钉版是合法形态，现单列口径（status INFO 标注、sync 跳过仓库同步仅收敛机器）
+- validate 钉子检查清单补 starship-version（原仅四钉在册、实为五钉，starship 的版本行与 sha256 行此前不在格式检查面）
+- README 系统清单陈旧订正：移除 v0.11.0 已除名的 tree、补同版吸收的 btop / direnv
+
+
 ## [0.11.0] - 2026-11-01
 
 ### Added
