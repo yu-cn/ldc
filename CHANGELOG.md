@@ -9,6 +9,19 @@
 
 ## [Unreleased]
 
+### Added
+- `ldc status --json` 机器可读出口（cli-ux 批工单01，联动 wdc 同批 `-Json`）：单行紧凑 JSON（`repo/dotfiles/identity/root_stage/last_bootstrap/upstream_check/hints`，布尔出 true/false）——agent 判定不再 scrape 颜色文本；status 分支重构为先算后印，人读输出与 JSON 出口共用同一批判定
+- ldc 子命令 Tab 补全（cli-ux 批工单05，联动 wdc 同批）：bashrc 注册 `complete -F`，词表 sed 解析自脚本本体 `LDC_COMMANDS` 单一来源——改词表一处生效，配置不抄列表
+- `docs/cli-parity.md` 双仓 CLI parity 契约（cli-ux 批工单06，主作者位本仓，双仓同源拷贝）：命令表（含旗标与退出码）+ 共用 UX 约定（裸命令只读 / 打错建议 / `-h` 语义 / JSON 出口 / BEL / 补全单一来源）；dev-standard-guard 周检循环纳入本文件，validate 加「实现命令表 == 契约注释行」断言——改实现忘改契约提交即红
+
+### Changed
+- 子命令后接 `-h/--help` 出该命令详解（cli-ux 批工单02，联动 wdc 同批）：原被静默吞掉；help 印刷收敛为 `print_topic_help` 单一函数（`ldc help <topic>` 与新拦截共用）
+- `ldc sync` 收尾 BEL 提示（cli-ux 批工单04，联动 wdc 同批）：trap EXIT 覆盖快速路径/全量/FAIL/PENDING 全部收尾路径——切走窗口结束有感知
+- `ldc help` 总览补退出码注册表（0 成功 · 1 失败 · 2 有待办手工步骤）
+
+### Fixed
+- `ldc log N` 参数校验（cli-ux 批工单03）：非正整数以 ldc 口径报错 exit 1，不再把 tail 的报错泄露给调用方
+
 ## [0.12.0] - 2026-11-07
 
 ### Added
