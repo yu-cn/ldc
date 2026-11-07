@@ -170,7 +170,7 @@ pkg_install() {
     # pkg_install <包名>… —— 包安装薄抽象（决策表：apt 先行，多发行版日后增量加）
     # 幂等：dpkg 已装逐包报 SKIP；缺失件合并为一次 apt 事务（用 apt 自带的依赖解析与事务原子性，
     # 红线 11——不重写包管理）；整批失败退回逐包重试定位元凶。返回失败件数（0 = 全成）。需 root。
-    local pkg rc=0 ver
+    local pkg rc=0 ver absent=()
     if ! have apt-get; then
         log 'ERROR: 未找到 apt-get——LDC v1 仅支持 Ubuntu/Debian（apt 系）'
         return 1
@@ -179,14 +179,29 @@ pkg_install() {
         if dpkg -s "$pkg" >/dev/null 2>&1; then
             ver=$(dpkg-query -W -f='${Version}' "$pkg" 2>/dev/null)
             step "$pkg" SKIP "已装 $ver"
+        else
+            absent+=("$pkg")
+        fi
+    done
+    [ "${#absent[@]}" -gt 0 ] || return 0
+    if apt-get install -y -qq "${absent[@]}" >/dev/null 2>&1; then
+        for pkg in "${absent[@]}"; do step "$pkg" OK 'apt 安装'; done
+        return 0
+    fi
+    # 整批事务失败：退回逐包定位元凶（整批中已装上的件按已装报，不再重复装）
+    step 'apt 事务' INFO "整批安装失败——退回逐包定位（${absent[*]}）"
+    for pkg in "${absent[@]}"; do
+        if dpkg -s "$pkg" >/dev/null 2>&1; then
+            ver=$(dpkg-query -W -f='${Version}' "$pkg" 2>/dev/null)
+            step "$pkg" OK "已装 $ver（整批事务部分成功）"
         elif apt-get install -y -qq "$pkg" >/dev/null 2>&1; then
             step "$pkg" OK 'apt 安装'
         else
             step "$pkg" FAIL 'apt 安装失败'
-            rc=1
+            rc=$((rc + 1))
         fi
     done
-    return $rc
+    return "$rc"
 }
 
 compat_link() {

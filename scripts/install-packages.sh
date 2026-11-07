@@ -56,9 +56,12 @@ else
 fi
 
 phase 'root · 包清单核销（base-linux + cli-tools）'
-while read -r pkg; do
-    pkg_install "$pkg" || fail=$((fail + 1))
-done < <(pkg_list base-linux.pkg && pkg_list cli-tools.pkg)
+# 缺失件由 pkg_install 合并为单次 apt 事务（红线 11：用 apt 自带的事务与依赖解析）；
+# 逐包 [OK]/[SKIP] 口径不变，返回值=失败件数
+mapfile -t core_pkgs < <(pkg_list base-linux.pkg && pkg_list cli-tools.pkg)
+pkg_install "${core_pkgs[@]}"
+rc=$?
+[ "$rc" -gt 0 ] && fail=$((fail + rc))
 
 # 可选包组（ADR-0010）：仅显式指名时安装——选择在调用时，激活态即 dpkg 状态
 if [ $# -gt 0 ]; then
@@ -71,9 +74,12 @@ if [ $# -gt 0 ]; then
             fail=$((fail + 1))
             continue
         fi
-        while read -r pkg; do
-            pkg_install "$pkg" || fail=$((fail + 1))
-        done < <(pkg_list "$name.pkg")
+        mapfile -t group_pkgs < <(pkg_list "$name.pkg")
+        if [ "${#group_pkgs[@]}" -gt 0 ]; then
+            pkg_install "${group_pkgs[@]}"
+            rc=$?
+            [ "$rc" -gt 0 ] && fail=$((fail + rc))
+        fi
     done
 fi
 
@@ -129,9 +135,12 @@ else
     fi
     if [ "$ok_repo" -eq 1 ]; then
         apt-get update -qq || true
-        while read -r pkg; do
-            pkg_install "$pkg" || fail=$((fail + 1))
-        done < <(pkg_list desktop-apps.pkg)
+        mapfile -t desktop_pkgs < <(pkg_list desktop-apps.pkg)
+        if [ "${#desktop_pkgs[@]}" -gt 0 ]; then
+            pkg_install "${desktop_pkgs[@]}"
+            rc=$?
+            [ "$rc" -gt 0 ] && fail=$((fail + rc))
+        fi
     fi
 fi
 
