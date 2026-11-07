@@ -4,6 +4,8 @@
 #   + gitidentity 占位 + ~/.ldc 指针 + pre-commit 钩子接线
 # 渲染模型（ADR-0015）：落点 = 模板渲染拷贝，机器与仓库的运行时耦合归零（仓库缺席只影响 ldc CLI）。
 #   落点与模板同内容 → 幂等跳过；不同 → 覆盖前备份 .bak（已存在则 .bak.N 递增，绝不静默丢弃机器侧内容）；
+#   编号备份轮转上限 3 份（.bak 本体永不清 + 编号系列 ≤2）——超出删 mtime 最老并逐项报告，
+#   删除动作可见即「绝不静默丢弃」的保持形态（2026-11-07 主人定夺，ADR-0015 补记）；
 #   纯模板更新（渲染账本 rendered.sha256 判定落点自上次渲染未动）直接重渲染、不产 .bak；
 #   符号链接残形（v0.5 旧安装形态 / 外来链接）直接替换不备份——链接本体可再造，指向内容不受影响。
 #   例外：~/.local/bin/ldc 保持符号链接（CLI 入口跟随仓库）。
@@ -43,6 +45,25 @@ link() {
     fi
 }
 
+bak_rotation_cap() {
+    # bak_rotation_cap <落点> <显示名>（ADR-0015 补记）：编号备份系列（落点.bak.*）≤2——连 .bak
+    # 本体共 3，本体永不清（首接管原件是「绝不静默丢弃」的最后底牌）；超出删 mtime 最老并逐项
+    # 报告（cp -p 保留原内容 mtime，最老 = 最早备份的机器侧内容）。清理未成不阻断——留存下次收敛重试
+    local dst=$1 name=$2 f series=()
+    while IFS= read -r f; do series+=("$f"); done < <(
+        find "$(dirname "$dst")" -maxdepth 1 -name "$(basename "$dst").bak.*" -type f -printf '%T@ %p\n' 2>/dev/null \
+            | sort -n | awk '{ $1 = ""; sub(/^ +/, ""); print }'
+    )
+    [ "${#series[@]}" -gt 2 ] || return 0
+    for f in "${series[@]:0:$(( ${#series[@]} - 2 ))}"; do
+        if rm -f "$f" 2>/dev/null; then
+            step "$name" INFO "备份轮转上限——已清最老编号备份 $(basename "$f")"
+        else
+            step "$name" INFO "备份 $(basename "$f") 清理未成——留存待下次收敛重试"
+        fi
+    done
+}
+
 render() {
     # render <仓库模板> <落点> <显示名>（ADR-0015 渲染拷贝）：同内容幂等跳过；
     # 不同内容先轮转备份 .bak/.bak.N 再渲染；符号链接残形直接替换（见文件头注释）
@@ -67,6 +88,7 @@ render() {
             while [ -e "$bak" ]; do bak="$dst.bak.$n"; n=$((n + 1)); done
             if cp -p "$dst" "$bak"; then
                 step "$name" CHANGED "落点与模板不一致——旧内容已备份 $(basename "$bak")（可 ldc triage 吸收）"
+                bak_rotation_cap "$dst" "$name"
             else
                 step "$name" FAIL "备份失败（$bak）——放弃渲染以防丢失机器侧内容"
                 fail=$((fail + 1))

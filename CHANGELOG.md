@@ -14,6 +14,7 @@
 - CI 冒烟矩阵补 debian:12 amd64 腿（双发行版 × 双架构）：README / 预检承诺的 ubuntu/debian 双发行版自此均有实证腿——Debian 命名差异（fdfind/batcat）由兼容链接段真实覆盖，此前仅 ubuntu:24.04 双架构
 
 ### Changed
+- dotfiles 备份轮转设上限（[ADR-0015 补记](docs/adr/0015-copy-render-not-symlink.md)，联动 wdc 工单44 同语义同日）：`.bak` 本体 + 编号系列至多 3 份——本体永不清，编号系列超出删 mtime 最老并逐项报告（删除动作可见；「机器侧内容绝不静默丢弃」以「报告在」的形态保持）——此前无限递增，长跑机器攒档
 - Docker 安装面收编 download.docker.com 官方 apt 源（[ADR-0019](docs/adr/0019-docker-vendor-apt-repo.md)）——get.docker.com 管道脚本退役（全仓最后一个 curl | sh 安装面），与 gh / VSCode / Chrome 同款 `add_vendor_repo` 配方（keyring + 源 + 一次 apt 事务装 docker-ce 与 buildx / compose 插件）；marker 判重兼容既有安装（get.docker.com 装过的机器幂等直入，无需迁移）；版本不钉与 gh 同口径（apt 事务与 dpkg 账本即记账，红线 11）
 - 四段钉子安装器收编单一来源：uv / mise / starship / lazygit 的「下载 → sha256 落盘验 → 解压 → install」同构面（约 200 行四份拷贝、文案已现漂移）收敛为 common.sh `pinned_tarball_install`，资产命名例外注释保留在调用点；临时目录统一登记（`ldc_tmp_*`）+ trap 清理，中断不在 /tmp 留残
 - 包安装合批：`pkg_install` 缺失件合并为单次 apt 事务（新机收敛不再逐包 ~20 次独立事务；整批失败退回逐包定位元凶），逐包 `[OK]/[SKIP]` 口径不变——用 apt 自带的事务与依赖解析（红线 11）

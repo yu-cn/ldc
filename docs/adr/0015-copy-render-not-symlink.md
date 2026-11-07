@@ -24,6 +24,8 @@
 - 与 ADR-0004「机器派生值不入库、安装期渲染到机器本地」同构：本决策把落点整体视为渲染物，两仓概念统一。
 - 漂移方向判定（区分「模板更新了」vs「机器改了落点」，chezmoi persistent state 的最小化版 rendered.sha256）本版不做，留作增强——轮转备份 + triage 逐文件两问已够用。**补注（2026-10-26，主人批准实装）**：增强已落地——渲染账本 `~/.local/state/ldc/rendered.sha256`（sha256sum 兼容格式，记录上次渲染时各落点指纹；可丢，缺失退化 unknown 并在下次渲染自愈）。`drift_direction()` 出四方向：template-update（落点未动=纯模板更新）→ render() 直接重渲染不产 .bak、triage/plan 标注「通常选 r」；machine（模板未动）→ triage 标注；both → triage 警示「吸收会盖掉模板更新」；unknown → 行为等同首版。
 
+**补注（2026-11-07，主人定夺——wdc 工单44 同语义同日联动）**：轮转备份设上限 3 份（`.bak` 本体 + 编号系列 ×2）——本体永不清（首接管原件是「绝不静默丢弃」的最后底牌），编号系列超出删 mtime 最老并逐项报告。与「绝不静默丢弃」的张力以「删除动作可见」化解：报告在、文件名可查即非静默（非「不删」）；此前无限递增，长跑机器攒档。`.bashrc.bak` 整文件备份与 daemon.json 的 `.bak` 是「保最早原件」单份形态，无攒档面，不涉。
+
 ## WDC 条款（ADR-0007 统筹）
 
 Windows 侧同改渲染拷贝：install-dotfiles.ps1 改 Copy-Item（其轮转备份 Get-BackupPath 语义与本 ADR 一致）、verify 断言改内容比对、triage 平移、pwsh profile / bashrc 的「dotfiles 漂移即时提示」（工单24）改读内容比对。WT/VSCode/gh 的写穿税（坑6/14）与 reparse 双路径痛（工单35）一并消除。双仓共用决策落 LDC 编号、WDC 侧引用不复制；WDC 侧实施在 Windows 侧会话进行（本决策定稿时实施机无 pwsh，pre-commit 硬关不可绕）。
