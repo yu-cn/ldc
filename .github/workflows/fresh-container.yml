@@ -2,8 +2,10 @@ name: fresh-container
 # 新机冒烟（Linux 侧对 WDC fresh-machine VM 冒烟的廉价替代）：
 # 裸容器内以 root 全量跑 bootstrap + verify，证明「clone 后一条命令开箱即用」。
 # 容器内 EUID=0 → root 阶段直接内联（ADR-0004 容器路径，无 sudo 交接）。
-# 双发行版 × 双架构矩阵（ADR-0006）：ubuntu:24.04 amd64/arm64 + debian:12 amd64——README/预检
-# 承诺的 ubuntu/debian 双发行版自此有实证腿（Debian 命名差异 fdfind/batcat 由兼容链接段真实覆盖）。
+# 双发行版 × 双架构矩阵（ADR-0006）：ubuntu:24.04 + debian:13 各配 amd64/arm64 四腿——README/预检
+# 承诺的 ubuntu/debian 双发行版自此各有实证腿（Debian 命名差异 fdfind/batcat 由兼容链接段真实覆盖）。
+# Debian 定夺 13+（2026-11-07 主人定夺）：12/bookworm 仓库缺 eza/git-delta（debian 腿首跑即暴露，
+# run 42372991814），README 承诺面同步收敛为 Debian 13+；trixie 清单全齐零改动。
 # arm64 腿在 GitHub 免费 arm64 runner（ubuntu-24.04-arm 仅对公开仓库免费——本仓库 MIT 开源，与 WDC 同形态）。
 # LDC_SKIP_DOCKER=1：容器无 systemd，docker 装了也起不来；LDC_SMOKE=1：冒烟降级——bootstrap
 # 待办不计（容器无桌面、身份占位，可退 0），verify 身份断言降为存在性检查（ADR-0004）。
@@ -58,12 +60,16 @@ jobs:
             tag: ubuntu-24.04-amd64
           - arch: amd64
             runner: ubuntu-latest
-            image: debian:12
-            tag: debian-12-amd64
+            image: debian:13
+            tag: debian-13-amd64
           - arch: arm64
             runner: ubuntu-24.04-arm
             image: ubuntu:24.04
             tag: ubuntu-24.04-arm64
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            image: debian:13
+            tag: debian-13-arm64
     name: smoke (${{ matrix.tag }})
     timeout-minutes: 30
     container: ${{ matrix.image }}
