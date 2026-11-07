@@ -72,19 +72,23 @@ else
     step 'configs/vscode-extensions.txt' FAIL "应为 publisher.name 格式：$(printf '%s' "$ext_bad" | head -n 1)"
     fail=$((fail + 1))
 fi
-for v in mise-version uv-version lazygit-version nerd-fonts-version; do
+# 版本钉子检查（ADR-0011 + ADR-0020 收紧）：版本行格式 + sha256 行必配——分架构四钉须双 arch 行、
+# nerd-fonts 须无 arch 行；starship-version 本批补入（原检查清单漏它，实为五钉）
+for v in mise-version uv-version starship-version lazygit-version nerd-fonts-version; do
     val=$(head -n1 "$ROOT/configs/$v" | tr -d '[:space:]')
-    if [[ $val =~ ^[A-Za-z0-9][A-Za-z0-9.]*$ ]]; then
-        # ADR-0011：sha256 行（若有）格式——`sha256 <hex>` 或 `sha256 amd64|arm64 <hex>`
-        bad=$(grep -vE '^[[:space:]]*(#|$)|^[A-Za-z0-9][A-Za-z0-9.]*[[:space:]]*$|^sha256( (amd64|arm64))? [0-9a-f]{64}[[:space:]]*$' "$ROOT/configs/$v" || true)
-        if [ -z "$bad" ]; then
-            step "configs/$v" OK "$val"
-        else
-            step "configs/$v" FAIL "sha256 行应为 sha256 [amd64|arm64] <64位hex>：$(printf '%s' "$bad" | head -n 1)"
-            fail=$((fail + 1))
-        fi
+    # 白名单外的异行：注释空行 / 版本行 / sha256 行（带或不带 arch）之外的任何行
+    bad=$(grep -vE '^[[:space:]]*(#|$)|^[A-Za-z0-9][A-Za-z0-9.]*[[:space:]]*$|^sha256( (amd64|arm64))? [0-9a-f]{64}[[:space:]]*$' "$ROOT/configs/$v" || true)
+    sha_ok=1
+    if [ "$v" = nerd-fonts-version ]; then
+        grep -qE '^sha256 [0-9a-f]{64}$' "$ROOT/configs/$v" || sha_ok=0
     else
-        step "configs/$v" FAIL '应为非空单行版本号'
+        grep -qE '^sha256 amd64 [0-9a-f]{64}$' "$ROOT/configs/$v" || sha_ok=0
+        grep -qE '^sha256 arm64 [0-9a-f]{64}$' "$ROOT/configs/$v" || sha_ok=0
+    fi
+    if [[ $val =~ ^[A-Za-z0-9][A-Za-z0-9.]*$ ]] && [ -z "$bad" ] && [ "$sha_ok" -eq 1 ]; then
+        step "configs/$v" OK "$val"
+    else
+        step "configs/$v" FAIL "版本行须非空单行、sha256 行必配（$([ "$v" = nerd-fonts-version ] && echo '无 arch 单行' || echo '双 arch 齐备')，ADR-0011/0020）$([ -n "$bad" ] && printf '；异行：%s' "$(printf '%s' "$bad" | head -n 1)")"
         fail=$((fail + 1))
     fi
 done

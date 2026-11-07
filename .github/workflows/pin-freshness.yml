@@ -1,0 +1,49 @@
+name: pin-freshness
+# 版本钉子新鲜度巡检（ADR-0020）：五钉子钉的是各工具官方仓库的 release 资产——LDC 唯一的
+# 真上游关系。本工作流对账钉值与工具上游 releases/latest，不同即在 workflow summary 列明细
+#（只报「钉 X / 上游 Y」，不做版本序比较——判读归人）。
+# 只提醒不升级（钉子升级 = 人的决定 + sha256 同 commit 重算，ADR-0011）；恒 exit 0 不红 badge
+#（钉子滞后于上游是常态非事故——对齐 dev-standard-guard 拒绝瞬时红的取舍）。
+# 勿与 check-upstream 混同：那边对账的 wsl-comfort 是参考资源非上游（ADR-0014 补记）。
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 1'   # 每周一 05:00 UTC（fresh-container 03:00 / dev-standard-guard 04:00 错峰）
+
+jobs:
+  pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: 五钉子对上游 latest
+        shell: bash
+        run: |
+          stale=0
+          {
+            echo '## 钉子新鲜度（ADR-0020）'
+            echo '| 钉子 | 钉值 | 上游 latest | 状态 |'
+            echo '| --- | --- | --- | --- |'
+            while read -r pin upstream; do
+              cur=$(head -n1 "configs/$pin" | tr -d '[:space:]')
+              tag=$(curl -fsS "https://api.github.com/repos/$upstream/releases/latest" | jq -r '.tag_name // empty')
+              if [ -z "$tag" ]; then
+                echo "| $pin | $cur | （API 不可达） | 查询失败 |"
+                continue
+              fi
+              up=${tag#v}
+              if [ "$cur" = "$up" ]; then
+                echo "| $pin | $cur | $up | 一致 |"
+              else
+                echo "| $pin | $cur | $up | **上游有新版** |"
+                stale=$((stale + 1))
+              fi
+            done <<'PINS'
+          uv-version astral-sh/uv
+          mise-version jdx/mise
+          starship-version starship/starship
+          lazygit-version jesseduffield/lazygit
+          nerd-fonts-version ryanoasis/nerd-fonts
+          PINS
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "陈旧钉子：$stale 个（明细见 summary）——升级 = 改 configs/*-version + sha256 同 commit 重算（ADR-0011），决策归人"
+          exit 0
