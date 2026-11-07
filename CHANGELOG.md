@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-07
+
 ### Added
 - `ldc status --json` 机器可读出口（cli-ux 批工单01，联动 wdc 同批 `-Json`）：单行紧凑 JSON（`repo/dotfiles/identity/root_stage/last_bootstrap/upstream_check/hints`，布尔出 true/false）——agent 判定不再 scrape 颜色文本；status 分支重构为先算后印，人读输出与 JSON 出口共用同一批判定
 - ldc 子命令 Tab 补全（cli-ux 批工单05，联动 wdc 同批）：bashrc 注册 `complete -F`，词表 sed 解析自脚本本体 `LDC_COMMANDS` 单一来源——改词表一处生效，配置不抄列表
@@ -139,6 +141,7 @@
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
 [Unreleased]: https://github.com/yu-cn/ldc/compare/v0.12.0...HEAD
+[0.13.0]: https://github.com/yu-cn/ldc/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/yu-cn/ldc/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/yu-cn/ldc/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/yu-cn/ldc/compare/v0.9.0...v0.10.0
