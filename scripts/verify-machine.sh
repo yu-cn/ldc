@@ -78,7 +78,7 @@ assert_that 'gh 在位' 'root 阶段安装（官方 apt 源）' 'command -v gh'
 if docker_skipped; then
     step 'docker 在位' SKIP '外部 LDC_SKIP_DOCKER 或 systemd 未生效中间态'
 else
-    assert_that 'docker 在位' 'root 阶段安装（get.docker.com）' 'command -v docker'
+    assert_that 'docker 在位' 'root 阶段安装（download.docker.com 官方 apt 源，ADR-0019）' 'command -v docker'
     assert_that 'docker daemon 声明键在位（日志轮转 + live-restore）' \
         'root 阶段受保护合并：sudo bash scripts/install-packages.sh' \
         'have docker && docker_daemon_declared_ok'

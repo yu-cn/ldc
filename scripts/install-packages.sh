@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-packages.sh — root 阶段：apt 包清单核销 + fd/bat 兼容链接 + gh 官方源 + Docker（ADR-0004）
+# install-packages.sh — root 阶段：apt 包清单核销 + fd/bat 兼容链接 + gh 官方源 + Docker（官方 apt 源，ADR-0019；ADR-0004）
 # 必须可独立 sudo 运行：cd <repo> && sudo bash scripts/install-packages.sh
 # 可选包组（ADR-0010）：附加参数显式指名——sudo bash scripts/install-packages.sh media-doc
 #   （清单即菜单 configs/<名>.pkg；装没装由 dpkg 记账，不进 verify/root 完成度）
@@ -165,16 +165,27 @@ else
     step 'wsl.conf systemd' SKIP '非 WSL 形态'
 fi
 
-phase 'root · Docker'
+phase 'root · Docker（download.docker.com 官方 apt 源，ADR-0019）'
 if docker_skipped; then
     step docker SKIP '外部 LDC_SKIP_DOCKER 或 systemd 未生效中间态——生效后重跑补装'
 elif have docker; then
     step docker SKIP '已装'
 else
-    if curl -fsSL https://get.docker.com | sh >/dev/null; then
-        step docker OK '官方脚本安装'
+    # 与 gh/VSCode/Chrome 同款 add_vendor_repo 配方（ADR-0019）：keyring + 源 + 一次 apt 事务——
+    # get.docker.com 管道脚本退役；marker 判重兼容其既有安装（同源同 keyring，含 deb822 形态，
+    # 幂等直入安装段）。distro/codename 直取 os-release（预检已限死 ubuntu/debian）；Ubuntu
+    # interim 发行版 docker 源偶有数日滞后，届时本步 FAIL 带指引，不静默降级
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    arch=$(dpkg --print-architecture)
+    if add_vendor_repo docker.gpg "https://download.docker.com/linux/${ID}/gpg" docker.list \
+        "deb [arch=$arch signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${ID} ${VERSION_CODENAME} stable" \
+        '' 'download\.docker\.com/linux/(ubuntu|debian)' \
+       && apt-get update -qq \
+       && apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null; then
+        step docker OK '官方 apt 源安装（docker-ce + buildx / compose 插件）'
     else
-        step docker FAIL 'get.docker.com 安装失败'
+        step docker FAIL '官方源配置/安装失败（ADR-0019——codename 是否被 docker 源支持查 docs.docker.com）'
         fail=$((fail + 1))
     fi
 fi

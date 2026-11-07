@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/common.sh
 . "$ROOT/scripts/lib/common.sh"
 
-# 特殊安装面：apt 装但不走 .pkg 清单的声明项（install-packages.sh 专项段：gh 官方源、Docker 官方脚本）
+# 特殊安装面：apt 装但不走 .pkg 清单的声明项（install-packages.sh 专项段：gh 官方源、Docker 官方源 ADR-0019）
 # ——它们有 verify 断言管，不算「自装未声明」
 special='gh docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin'
 

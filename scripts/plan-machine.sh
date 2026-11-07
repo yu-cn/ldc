@@ -122,7 +122,7 @@ elif have docker; then
         pstep 'daemon.json' PLAN '将受保护合并声明键（机器自有键保留，原件备份 .bak；绝不自动重启 docker）'
     fi
 else
-    pstep docker PLAN '将经 get.docker.com 官方脚本安装'
+    pstep docker PLAN '将配置 download.docker.com 官方 apt 源并安装（ADR-0019）'
     pstep 'docker 组' PLAN '将把调用用户加入 docker 组（重新登录生效）'
 fi
 
