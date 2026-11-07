@@ -1,6 +1,6 @@
 # 工单02：收敛账本快速路径——已收敛且声明未变时 ldc sync 跳过 bootstrap
 
-Status: in-progress
+Status: done
 
 ## 背景
 
@@ -15,12 +15,15 @@ Status: in-progress
 
 ## 验收清单
 
-- [ ] validate 全绿（shellcheck）
-- [ ] 账本三态演练：正常记账/损坏回退/缺失回退
-- [ ] sync 四态演练：命中（SKIP+quick）/ 账本不匹配（全量）/ 脏树（全量）/ --full（全量）
-- [ ] 真机端到端：bootstrap exit 2（WSL 形态级）后账本在位 → ldc sync 走快速路径
-- [ ] WDC 委托契约不动（bootstrap.sh 入口参数/退出码/独立可跑不变）
+- [x] validate 全绿（shellcheck）
+- [x] 账本三态演练：正常记账/损坏回退/缺失回退/非 hex 回退
+- [x] sync 四态演练：命中（SKIP+quick 绿）/ 账本损坏（全量）/ 脏树（全量）/ --full（全量）
+- [x] 真机端到端：bootstrap exit 2（WSL 形态级）后账本在位 → ldc sync 走快速路径
+- [x] WDC 委托契约不动（bootstrap.sh 入口参数/退出码/独立可跑不变）
 
 ## 实录
 
-（收口补）
+- 账本四态：set/get 往返、两行形态、损坏/缺失/40 位非 hex 全部正确回退（rc 1）；record 落当前 HEAD。DRILL PASS。
+- 真机端到端（ASUS/WSL，提交后干净树）：`bash bootstrap.sh` exit 2（形态级）+ 收敛账本记 74a53ad（记账行先于 PENDING 判定行，status 抓取口径不破）；`ldc sync` 命中快速路径（SKIP bootstrap → verify --quick 全绿 → exit 0，亚秒级；本机已收敛态 bootstrap 仅 3s，快速路径收益主要在新机首收敛后的日常面与免全量 verify）。
+- sync 五态（clone 演练，origin 指本地路径避开真仓未推送领先）：命中/账本损坏（全量+重记）/脏树（全量）/--full（全量）/未知参数（exit 1 拒绝）。意外收获：clone 场景 `~/.local/bin/ldc` 链接与 hooksPath 两项断言 FAIL 被 quick 兜住——实证「快速路径是免重跑不是免断言」的 fail-safe 链。演练后指针/链接已还原，verify --quick 全绿复核。
+- 提交 74a53ad（validate 随 pre-commit 与自查双跑全绿）。

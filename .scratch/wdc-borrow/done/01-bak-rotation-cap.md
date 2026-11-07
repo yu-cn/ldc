@@ -1,6 +1,6 @@
 # 工单01：dotfiles 备份轮转上限（3 份封顶，删最老必报告）
 
-Status: in-progress
+Status: done
 
 ## 背景
 
@@ -14,10 +14,12 @@ install-dotfiles.sh render() 的备份轮转无限递增（`.bak` → `.bak.N` �
 
 ## 验收清单
 
-- [ ] validate 全绿（shellcheck）
-- [ ] 演练验证（模拟双向漂移 5 轮：总数恒 ≤3、`.bak` 本体在、最老先删、逐项报告）
-- [ ] 幂等语义不破：无漂移机器零输出零变更
+- [x] validate 全绿（shellcheck）
+- [x] 演练验证（模拟双向漂移 5 轮：总数恒 ≤3、`.bak` 本体在、最老先删、逐项报告）
+- [x] 幂等语义不破：无漂移机器零输出零变更（plan 投影「将变更 0」）
 
 ## 实录
 
-（收口补）
+- 演练（对齐 wdc 工单44 口径，从真实文件 sed 抽取被测函数）：5 轮模拟漂移 round3 起每轮删最老编号份、终态 `.bak + .bak.4 + .bak.5`；另设「名字序 ≠ mtime 序」场景（.bak.1 最新 / .bak.3 最老）——正确按 mtime 删 `.bak.3`，证明排序与命名解耦（洞位复用后编号非单调，mtime 才是真序）。DRILL PASS。
+- 本机无漂移，重跑 bootstrap dotfiles 阶段全 SKIP、轮转零输出（幂等不破）。
+- 提交 708a346（validate 随 pre-commit 与自查双跑全绿）。
