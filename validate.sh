@@ -267,6 +267,16 @@ else
     step 'CLI 建议自测（ldc 错命令）' FAIL '建议或退出码不符预期'
     fail=$((fail + 1))
 fi
+# CLI parity 契约自测（cli-ux-batch 工单06）：实现命令表 == docs/cli-parity.md 契约注释行——
+# 双仓同源契约由 guard 周检文件一致性，本断言把「改实现忘改契约」提前到提交时
+impl_cmds=$(sed -n "s/^LDC_COMMANDS='\(.*\)'$/\1/p" "$ROOT/ldc")
+contract_cmds=$(sed -n 's/^<!-- ldc-commands: \(.*\) -->$/\1/p' "$ROOT/docs/cli-parity.md" 2>/dev/null)
+if [ -n "$impl_cmds" ] && [ "$impl_cmds" = "$contract_cmds" ]; then
+    step 'CLI parity 契约自测（ldc 命令表）' OK "$impl_cmds"
+else
+    step 'CLI parity 契约自测（ldc 命令表）' FAIL "实现「$impl_cmds」≠ 契约「$contract_cmds」——改实现须同批改 docs/cli-parity.md（主作者位 LDC，双仓同源拷贝）"
+    fail=$((fail + 1))
+fi
 
 phase 'Validate 汇总'
 if [ "$fail" -eq 0 ]; then
