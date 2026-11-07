@@ -149,6 +149,8 @@ main() {
 }
 
 mkdir -p "$ROOT/logs"
+# 日志轮转：保留最近 20 份（含本次）——判读以最近为主，更旧的随跑清理（logs/ 不入库）
+ls -1t "$ROOT/logs"/bootstrap-*.log 2>/dev/null | tail -n +20 | xargs -r rm -f
 LOG="$ROOT/logs/bootstrap-$(date +%Y%m%d-%H%M%S).log"
 main "$@" 2>&1 | tee "$LOG"
 exit "${PIPESTATUS[0]}"

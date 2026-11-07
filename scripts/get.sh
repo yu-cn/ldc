@@ -2,9 +2,9 @@
 # get.sh — 远程一键引导（运行时仓库尚不存在，故不依赖本仓库任何脚本；对齐 WDC scripts/get.ps1）
 # 用法（新机器一条命令）：
 #   curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash            # 跟 main
-#   curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash -s -- v0.4.0  # 钉 tag（clone 后 checkout）
+#   curl -fsSL https://raw.githubusercontent.com/yu-cn/ldc/main/scripts/get.sh | bash -s -- v0.4.0  # 钉 tag（fresh clone 与复用路径均 checkout）
 # 环境变量（钉 tag 与位置参数同义；仓库覆盖供 fork 用户——对齐 WDC get.ps1 的 env 口径）：
-#   LDC_TAG=v0.4.0    钉 tag（仅作用于 fresh clone，~/.ldc 复用路径不受影响）
+#   LDC_TAG=v0.4.0    钉 tag（fresh clone 后 checkout；复用路径显式传 tag 即升级重钉——同 tag 重跑 no-op 幂等）
 #   LDC_REPO=https://github.com/<你>/ldc.git    fork 用户引导自己的仓库，不必走手动 clone 路径
 # 信任模型：curl | bash 属直接执行网络代码——介意可先 curl 单看本文件再管（审阅后手动路径见 README）
 # 职责：缺 git/curl 则 apt 安装（sudo；需密码就地询问）→ 定位或 clone 仓库 → bash bootstrap.sh
@@ -35,6 +35,7 @@ fi
 
 # 仓库定位：~/.ldc 指针有效则复用（已有机器重跑 = 收敛语义）；缺省 clone 到 ~/ldc
 repo=""
+cloned=0
 if [ -f "$HOME/.ldc" ]; then
     candidate=$(head -n 1 "$HOME/.ldc" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
     if [ -n "$candidate" ] && [ -d "$candidate/.git" ]; then
@@ -49,12 +50,19 @@ if [ -z "$repo" ]; then
     if [ ! -d "$DEFAULT_DIR" ]; then
         log "clone 仓库 → $DEFAULT_DIR"
         git clone "$REPO_URL" "$DEFAULT_DIR" || { log "ERROR: clone 失败——检查网络后重跑"; exit 1; }
-        if [ -n "$REF" ]; then
-            git -C "$DEFAULT_DIR" checkout "$REF" || { log "ERROR: checkout $REF 失败——tag 名核对 GitHub Releases"; exit 1; }
-            log "已钉版本：$REF"
-        fi
+        cloned=1
     fi
     repo="$DEFAULT_DIR"
+fi
+# 钉 tag（fresh clone 与复用路径同款）：显式传 tag 即钉/重钉——复用机器升级走「重跑本命令带新 tag」
+# （同 tag 重跑 checkout no-op，幂等）；不传保持现状（复用 = 收敛语义，不动工作区）
+if [ -n "$REF" ]; then
+    [ "$cloned" -eq 0 ] && git -C "$repo" fetch --tags --quiet 2>/dev/null
+    if ! git -C "$repo" checkout "$REF" 2>/dev/null; then
+        log "ERROR: checkout $REF 失败——tag 名核对 GitHub Releases（复用仓库可先 git fetch --tags）"
+        exit 1
+    fi
+    log "已钉版本：$REF"
 fi
 
 log "仓库就位：$repo —— 转发 bootstrap（root 交接语义在其内）"
