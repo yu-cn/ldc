@@ -431,6 +431,9 @@ desktop_session_reachable() {
     gsettings get "$schema" "$key" >/dev/null 2>&1
 }
 
+# shellcheck disable=SC2120  # 可选参 ${1:-} 仅供 validate 离线自测（跨文件，shellcheck 看不见）；
+# 仓内唯一调用点 pinned_tarball_install 无参传——0.9.0（CI 容器 apt 版）对带默认值的可选参仍
+# 报 SC2120、0.11 不报，定点 disable 收口版本分歧（fresh-container 42372468935 三腿实录）
 ldc_arch() {
     # uname -m → GitHub release 资产名用的架构段（amd64/arm64，ADR-0006 双架构一等公民）；
     # 全仓库唯一的架构判断点——新增二进制下载一律经此取资产段。不支持的架构返回 1。

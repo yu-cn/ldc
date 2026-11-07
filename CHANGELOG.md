@@ -28,6 +28,7 @@
 - bootstrap 日志轮转：`logs/` 保留最近 20 份，更旧的随跑清理
 
 ### Fixed
+- CI 冒烟容器（apt shellcheck 0.9.0）与新版（0.11）对带默认值可选参的 SC2120 判定分歧收口：`pinned_tarball_install` 收编引入的仓内无参调用点触发 0.9.0 报警致冒烟三腿红（11-02 以来首次冒烟暴露）——`ldc_arch` 定义点定点 disable 并注明版本分歧
 - `ldc sync` fetch 失败不再静默继续——原按陈旧 origin/main 判「一致」可能漏拉仍报全绿（盲同步风险），现 FAIL 中止
 - 钉版形态（get.sh LDC_TAG 钉 tag 后 detached HEAD）不再误判：`ldc status` 原对钉版机误报「落后 N」，`ldc sync` 原在 pull 上撞 detached HEAD 失败——钉版是合法形态，现单列口径（status INFO 标注、sync 跳过仓库同步仅收敛机器）
 - validate 钉子检查清单补 starship-version（原仅四钉在册、实为五钉，starship 的版本行与 sha256 行此前不在格式检查面）
