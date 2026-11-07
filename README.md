@@ -12,7 +12,7 @@
 
 基于 [WDC](https://github.com/yu-cn/wdc)（Windows + WSL 同思路仓库）的经验自建，独立仓库不 fork（[ADR-0001](docs/adr/0001-own-tree-not-fork-wdc.md)）。两仓为**对等的关联项目**：WDC 主管 Windows 侧，LDC 主管 Linux 侧（含 WSL Ubuntu），各自完整自闭环；WSL 的 Linux 收敛由 WDC 移交 LDC（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md)）。仓库以 [MIT](LICENSE) 开源，欢迎直接使用或 fork 改造成你自己的环境。
 
-**支持的机器形态**：Ubuntu/Debian · **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
+**支持的机器形态**：Ubuntu/Debian（双发行版均入 CI 冒烟矩阵实证）· **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
 
 **安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· dotfiles 落点为模板渲染拷贝——仓库缺席不影响已收敛机器；纯模板更新直接重渲染（渲染账本判定），机器侧改动覆盖前必备份 `*.bak`（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）· Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
 

@@ -33,7 +33,7 @@ LDC 与 WDC 同主人关联项目，改动需跨仓库统筹：
 5. **不替用户做首次 commit**：身份未填时提交会造出占位作者污染历史；交接命令见 README/AGENTS 惯例
 6. **install-packages.sh 必须可独立 `sudo bash` 运行**（ADR-0004 交接命令依赖此性质）
 7. **exit 码语义**：0 就绪 / 1 失败 / 2 有待办手工步骤——`ldc status` 与 CI 依赖此约定
-8. **架构适配单点**（ADR-0006）：新增二进制下载一律经 `ldc_arch()` 取资产段（amd64/arm64），勿散落 `uname -m` 判断；CI 双架构冒烟矩阵是承诺的验证面
+8. **架构适配单点**（ADR-0006）：新增二进制下载一律经 `ldc_arch()` 取资产段（amd64/arm64），勿散落 `uname -m` 判断；CI 双发行版×双架构冒烟矩阵是承诺的验证面
 9. **daemon.json 只做受保护合并**（ADR-0009）：jq 递归合并，声明叶键胜出、机器自有键保留，绝不整文件接管、绝不自动重启 docker
 10. **可选包组不进断言面**（ADR-0010）：通用核心之外的清单（configs/ 下 base-linux/cli-tools/desktop-apps 以外的 .pkg）只经 install-packages.sh 显式指名安装，装没装由 dpkg 记账——不进 verify / root_stage_complete，不建激活文件、不做交互选择
 11. **不重写包管理**：凡 apt/dpkg 已有的能力——依赖解析、安装账本、卸载、升级事务——LDC 一行不重写；LDC 在软件面只做声明（清单/钉子）、收敛（幂等重放）、断言（verify 对账）。（2026-10-25 定性，源自「LDC 是否在干包管理」的定位讨论——LDC 之于 apt 是 Ansible 之于 apt，不是 Nix 之于 apt）
