@@ -139,10 +139,11 @@ phase '6/6 · WSL 形态（工单12 自 WDC probe.sh 移交，安装面 install-
 # 容器 root 冒烟的 /bin/bash 天然满足）
 assert_that '默认 shell = bash' 'root 阶段 chsh——重跑 bootstrap 即收敛' \
     '[ "$(getent passwd "$(whoami)" | cut -d: -f7)" = "/bin/bash" ]'
-# systemd 生效：仅 WSL 形态断言（wsl.conf 刚写入未重启的中间态会 FAIL——提示语给出收敛路径）；
+# systemd 生效：仅 WSL 形态断言（刚启用未重启的中间态会 FAIL——提示语给出收敛路径）；
+# wsl.conf 写入归 WDC 单一实现（ADR-0021）——本断言只断效果（Docker 域依赖），断言面不随管理权走；
 # 纯 Linux/容器不在此列（此前从未断言，不扩面）
 if is_wsl; then
-    assert_that 'systemd 生效' '/etc/wsl.conf 已写入但未生效——wsl --shutdown 后下次进入生效，重跑 bootstrap 补装 docker 域' \
+    assert_that 'systemd 生效' 'systemd 未生效——wsl --shutdown 后下次进入生效，重跑 wdc bootstrap 补装 docker 域（wsl.conf 写入归 WDC，ADR-0021）' \
         '[ -d /run/systemd/system ]'
 else
     step 'systemd 生效' SKIP '非 WSL 形态'

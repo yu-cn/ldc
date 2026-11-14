@@ -36,3 +36,5 @@ LDC 与 [WDC](https://github.com/yu-cn/wdc) 是同一主人的关联项目（本
 - **verify 断言面**：新增「默认 shell = bash」（全形态）与「systemd 生效」（`is_wsl` 门控）两断言——承接 WDC probe.sh 的 WSL 特有两键；非 WSL 形态此前从未断言 systemd，不扩面。
 
 拒绝的替代：WDC wrapper 以 `su -l <user> -c 'sudo -n …'` 复现 sudo 语境（WSL 默认用户 sudo 需密码，非交互必挂）；LDC 新开独立 root-ops 脚本（三件每件三五行的体量，并入 install-packages.sh 现有 root 面最省契约——退出码语义与「可独立 sudo 运行」红线不变）。
+
+**wsl.conf 管理权回 WDC**（补记 2026-11-14，主人定夺「WSL 配置归 WDC」——见 [ADR-0021](0021-wsl-platform-config-back-to-wdc.md)）：上节②（`/etc/wsl.conf` systemd 写入）随整文件管理权移交 WDC 单一实现（其 root 阶段保护合并，委托 install-packages.sh **之前**写入，fresh-machine 时序不变）；机器形态段瘦身为默认 shell + docker 组两件。本仓保留「systemd 生效」效果断言（Docker 域依赖，断效果不断实现）。

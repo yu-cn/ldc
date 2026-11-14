@@ -144,7 +144,7 @@ else
     fi
 fi
 
-phase 'root · 机器形态（默认 shell / wsl.conf systemd——工单12 自 WDC setup-ubuntu.sh 移交）'
+phase 'root · 机器形态（默认 shell / docker 组——wsl.conf 归 WDC，ADR-0021）'
 # 默认 shell = bash（幂等）：本仓 dotfiles 以 bash 为壳，默认 shell 与声明一致；
 # 无目标用户（容器 root 冒烟）跳过
 if [ -z "$target_user" ]; then
@@ -160,19 +160,9 @@ else
         fail=$((fail + 1))
     fi
 fi
-# wsl.conf systemd：WSL 形态才相关（Docker 守护进程依赖）；写入后需 wsl --shutdown 重启
-# 发行版生效——本会话内 systemd 仍是未生效中间态，docker 域由 docker_skipped 自跳、
-# 重启后重跑 bootstrap 补装（幂等）。语义与原 WDC setup-ubuntu.sh 实现一致（移交不改行为）
-if is_wsl; then
-    if grep -q '^systemd=true' /etc/wsl.conf 2>/dev/null; then
-        step 'wsl.conf systemd' SKIP '已启用'
-    else
-        printf '\n[boot]\nsystemd=true\n' >> /etc/wsl.conf
-        step 'wsl.conf systemd' CHANGED '已写入——wsl --shutdown 后下次进入生效'
-    fi
-else
-    step 'wsl.conf systemd' SKIP '非 WSL 形态'
-fi
+# wsl.conf 整文件管理权归 WDC（ADR-0021，工单13——原 systemd 写入块随 2026-11-14 边界修订退役）：
+# WDC setup-ubuntu.sh root 阶段在委托本脚本之前保护合并（[boot] systemd / [user] default），
+# 本会话内 systemd 未生效的中间态语义不变——docker 域由 docker_skipped 自跳、重启后重跑补装
 
 phase 'root · Docker（download.docker.com 官方 apt 源，ADR-0019）'
 if docker_skipped; then
