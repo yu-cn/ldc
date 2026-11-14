@@ -51,3 +51,5 @@ bash scripts/plan-machine.sh           # 干跑预演（只读）——改安装
 ## 已知坑
 
 1. **仓库缺席 → 系统配置死链失联**（2026-10-25 定性；**同日经 ADR-0015 渲染拷贝根治**，本条降级为历史档案）：原失效面（v0.5 及以前的符号链接形态，实录自 WDC 侧同构事故，其条目见 WDC docs/agents/collaboration.md 坑15）：`~/dev/ldc` 被删则 `~/.gitconfig` / `~/.bashrc` / `~/.config/starship.toml` 三条符号链接全变死链——git 一切命令 fatal（死链挡 clone 本身，exit 128），bash/starship 静默降级。渲染拷贝后仓库缺席仅影响 `ldc` CLI 自身（自描述报错带恢复指引），git/bash/starship/VSCode 全部照常。历史恢复配方：`rm -f ~/.gitconfig` → clone 仓库 → `bash bootstrap.sh` 重渲染 → `bash scripts/verify-machine.sh --quick` 验收。
+
+2. **Windows 侧经 `\\wsl.localhost` 的写操作会剥 Linux 执行位**（2026-11-14 实录：一轮跨侧会话后仓库 12 个 755 文件全变 644——含 `.githooks/pre-commit`，而 git 对不可执行钩子**静默跳过**，把关失守无任何报错；UNC 路径下调用的还是 Windows git，mode 语义与路径分隔符均不可靠）。修复配方（发行版内执行）：`git ls-files -s | awk '$1=="100755"{print $4}' | xargs chmod 755`。规避：LDC 侧 git 提交一律在发行版内跑（`wsl.exe -- bash -c 'cd ~/dev/ldc && git …'`）；agent 经 UNC 写过文件后必查 `git diff` 的 `old mode/new mode` 行——同一实录里单文件 chmod 修复曾漏扫全仓（首报仅 2 文件、实发 12 文件）。
