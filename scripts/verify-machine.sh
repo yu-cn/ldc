@@ -134,7 +134,7 @@ else
     fi
 fi
 
-phase '6/6 · WSL 形态（工单12 自 WDC probe.sh 移交，安装面 install-packages.sh 同口径）'
+phase '6/6 · WSL 形态（shell 断言与安装面同口径；systemd 断效果——写入归 WDC，ADR-0021）'
 # 默认 shell = bash：本仓 dotfiles 以 bash 为壳；与 root 阶段 chsh 同口径（任何形态一致——
 # 容器 root 冒烟的 /bin/bash 天然满足）
 assert_that '默认 shell = bash' 'root 阶段 chsh——重跑 bootstrap 即收敛' \
