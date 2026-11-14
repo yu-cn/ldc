@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-14
+
 ### Changed
 - wsl.conf 管理权回 WDC（工单13，[ADR-0021](docs/adr/0021-wsl-platform-config-back-to-wdc.md) 修订 ADR-0007 补记②；主人 2026-11-14 定夺「WSL 配置归 WDC」，联动 WDC ADR-0008 同日）——`/etc/wsl.conf` 整文件归 WDC `setup-ubuntu.sh` root 阶段保护合并（`[boot]` systemd / `[user]` default，未管理段保护不碰）；本仓 install-packages.sh 机器形态段瘦身为默认 shell + docker 组两件。「systemd 生效」效果断言保留（Docker 域依赖，断效果不断实现），收敛路径改指 wdc bootstrap。fresh-machine 时序不变（WDC root 阶段在委托本仓之前写入；`docker_skipped()` 无 systemd 中间态自跳口径不变）
 
@@ -144,6 +146,7 @@
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
 [Unreleased]: https://github.com/yu-cn/ldc/compare/v0.12.0...HEAD
+[0.14.0]: https://github.com/yu-cn/ldc/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/yu-cn/ldc/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/yu-cn/ldc/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/yu-cn/ldc/compare/v0.10.0...v0.11.0
