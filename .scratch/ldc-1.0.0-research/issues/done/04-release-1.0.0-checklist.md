@@ -1,6 +1,6 @@
 # 04 v1.0.0 发布 checklist（门槛制——不达标不发；发布动作待主人 explicit 指令）
 
-Status: open（等待工单 02/03 收口 + 主人汇合点定夺）
+Status: closed——v1.0.0 已发布（2026-11-22，A 案双仓同号同日）
 Type: task
 
 ## 门槛
@@ -8,11 +8,11 @@ Type: task
 - [x] 工单 02/03 收口（内容批 34e3740 / demo c58d652）
 - [x] fresh-container 四架构 dispatch 复跑绿（run 44934727486 @ c58d652 全绿：handoff + ubuntu-24.04/debian-13 × amd64/arm64 四腿——发布时点新 HEAD 实证）
 - [x] 本机终验：`ldc sync` 收敛至 c58d652、收敛账本记形态级终态（exit 2=桌面域 N/A 待办，WSL 机器契约语义）→ `verify --quick` 全绿 exit 0（实机口径：单机本机 WSL Ubuntu）
-- [ ] （可选，主人窗口）本机全环回归：`ldc exit --yes` → bootstrap → verify 全绿——存量机降级路径终极实证（对应 WDC LETH 回归环；CI 已覆盖 fresh 半场）
+- [~] （可选，主人窗口）本机全环回归：`ldc exit --yes` → bootstrap → verify 全绿——**未做**（可选项；CI 全环腿已覆盖 fresh 半场，存量机降级半场留待日后窗口，不阻塞发布）
 - [x] 文档一致终查：README / docs/undo-table.md / docs/upgrade-v1.md / ADR-0022/0023/0024 / cli-parity——零陈旧引用（vscode-extensions/settings 残留扫描零命中）、exit 口径与 ADR-0024 一致、ADR 互链齐（README 6 / undo 表 4 / 升级指引 3 处）；顺手修 validate.sh 假绿残留（80357bd）
-- [ ] CHANGELOG 收节 v1.0.0（Unreleased → 版本节；compare 链续 v1.0.0...HEAD）
-- [ ] release notes 效果优先：承诺面句置顶 / 存量机影响正面回答（链 docs/upgrade-v1.md）/ 叙事骨架五件展开 / 已知事项含 `LDC_TAG=v0.14.0` 钉版回退姿势
-- [ ] 归档卫生：本批工单全归档
+- [x] CHANGELOG 收节 v1.0.0（Unreleased → 版本节 2026-11-22，8b810cb；compare 链续 v1.0.0...HEAD，顺修 0.14.0 收节时漏续的 v0.12.0 陈旧链）
+- [x] release notes 效果优先：承诺面句置顶 / 存量机影响正面回答（链 upgrade-v1）/ Linux 原生面展开 / 已知事项含钉版回退 `bash -s -- v0.14.0`（草稿取用）
+- [x] 归档卫生：本批工单全归档（本票收口即归档）
 
 ## 汇合点（两案备态——开跑前主人定夺；WDC 侧 checklist 门槛⑧已按 A 案铺路）
 
@@ -39,6 +39,7 @@ v1.0.0 承诺面：**一次性配置 · 显式更新/回归 · 完整退出 · �
 
 - 2026-11-22 开票（grilling 收口批；门槛结构对齐 WDC 04 同款）。
 - **汇合点情报（2026-11-22 查证）**：WDC v1.0.0 已发布（UTC 2026-11-21T18:00 = 北京时间 11-22 02:00，末轮全环 run 44930767170 绿后 4 分钟收口）——**A 案「同号同日」按北京时间口径今天（11-22）内仍成立**，窗口开着；过今天则 A 案失效自动落 B 案。
+- **收口实录（2026-11-22）**：主人 explicit 指令按 A 案发布。执行序：收节 commit 8b810cb（Fixed 补 validate 假绿修复、顺修陈旧 compare 链）→ 注解 tag v1.0.0（验证锚点入 tag message）→ release [v1.0.0](https://github.com/yu-cn/ldc/releases/tag/v1.0.0)（--latest，notes 草稿取用、链接转绝对）→ 本票归档。双仓同号同日 A 案成立。
 
 ## Comments
 
