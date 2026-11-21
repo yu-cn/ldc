@@ -6,9 +6,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <p align="center">
-  <a href="docs/demo.cast"><img src="docs/demo.gif" width="720" alt="ldc 终端速览：ldc / ldc plan / ldc verify --quick（约 4 秒循环播放）"></a>
+  <a href="docs/demo.cast"><img src="docs/demo.gif" width="720" alt="ldc 终端速览：ldc / ldc plan / ldc exit 预演（约 7 秒循环播放）"></a>
 </p>
-<p align="center"><sub>↑ 速览：<code>ldc</code> 快照 · <code>ldc plan</code> 干跑预演 · <code>ldc verify --quick</code> 机器断言（源文件 <a href="docs/demo.cast">docs/demo.cast</a>）</sub></p>
+<p align="center"><sub>↑ 速览：<code>ldc</code> 快照 · <code>ldc plan</code> 干跑预演 · <code>ldc exit</code> 完整退出预演（源文件 <a href="docs/demo.cast">docs/demo.cast</a>）</sub></p>
 
 基于 [WDC](https://github.com/yu-cn/wdc)（Windows + WSL 同思路仓库）的经验自建，独立仓库不 fork（[ADR-0001](docs/adr/0001-own-tree-not-fork-wdc.md)）。两仓为**对等的关联项目**：WDC 主管 Windows 侧，LDC 主管 Linux 侧（含 WSL Ubuntu），各自完整自闭环；WSL 的 Linux 收敛由 WDC 移交 LDC（[ADR-0007](docs/adr/0007-wdc-ldc-coordination.md)）。仓库以 [MIT](LICENSE) 开源，欢迎直接使用或 fork 改造成你自己的环境。
 
