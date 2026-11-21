@@ -100,7 +100,12 @@ jobs:
           [ ! -e "$HOME/.ldc" ] || { echo "::error::指针未清"; exit 1; }
           [ ! -e "$HOME/.local/bin/ldc" ] || { echo "::error::ldc 链接未清"; exit 1; }
       - name: 退了→装（exit 后重新 bootstrap）
-        run: bash /tmp/ldc/bootstrap.sh
+        run: |
+          # rc=0 全就绪；rc=2=有待办手工步骤（身份占位待填——LDC 退出码语义，exit 后重装属预期）
+          set +e
+          bash /tmp/ldc/bootstrap.sh
+          rc=$?
+          [ "$rc" -le 2 ] || { echo "::error::重装 bootstrap 退出码 $rc"; exit 1; }
       - name: 重跑 bootstrap（幂等证明：第二遍应零变更）
         env:
           LDC_SKIP_DOCKER: '1'
