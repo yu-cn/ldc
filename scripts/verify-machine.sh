@@ -107,15 +107,8 @@ if ! desktop_stack_present; then
 else
     assert_that 'JetBrainsMono NF 字体目录' '重跑 bootstrap（user 工具阶段）' \
         '[ -n "$(ls -A "$HOME/.local/share/fonts/JetBrainsMono-NF" 2>/dev/null)" ]'
-    # VSCode 配置落点已由 phase 1 的 dotfiles_map 内容断言覆盖（ADR-0015）；这里只管扩展
-    # （自装扩展不在清单不核销——ADR-0003）
-    if have code; then
-        assert_that 'VSCode 扩展清单在位' '重跑 bootstrap（user 工具阶段）' \
-            '[ -z "$(comm -23 <(pkg_list vscode-extensions.txt | sort) <(code --list-extensions 2>/dev/null | sort))" ]'
-    else
-        step 'VSCode 扩展清单' FAIL 'code 未装（root 阶段待交接）'
-        FAILS=$((FAILS + 1))
-    fi
+    # VSCode 扩展让位原生设置同步（ADR-0023）——不再断言清单，账号态归同步
+    step 'VSCode 扩展清单' SKIP '让位原生设置同步（ADR-0023）'
     if ! desktop_session_reachable; then
         step 'gsettings 读值比对' SKIP '无图形会话——登录 GNOME 桌面后重跑 bootstrap'
     elif [ "$QUICK" -eq 1 ]; then

@@ -172,18 +172,8 @@ else
         pstep '字体' PLAN "将安装 v$NF_VERSION"
     fi
 fi
-if ! desktop_stack_present; then
-    pstep 'VSCode 扩展' SKIP '非桌面机器形态（headless/WSL/容器）'
-elif ! have code; then
-    pstep 'VSCode 扩展' INFO 'code 未装——root 阶段交接完成后重跑 bootstrap'
-else
-    ext_missing=$(comm -23 <(pkg_list vscode-extensions.txt | sort) <(code --list-extensions 2>/dev/null | sort))
-    if [ -z "$ext_missing" ]; then
-        pstep 'VSCode 扩展' OK '清单全部就位'
-    else
-        pstep 'VSCode 扩展' PLAN "将安装 $(printf '%s\n' "$ext_missing" | wc -l) 个：$(printf '%s ' $ext_missing)"
-    fi
-fi
+# VSCode 扩展让位原生设置同步（ADR-0023）——不再投影清单安装，账号态归同步
+pstep 'VSCode 扩展' SKIP '让位原生设置同步（ADR-0023）——登录 VSCode 后自动恢复'
 
 phase '5/6 · dotfiles 与身份'
 while IFS='|' read -r name tmpl target _gate mode; do

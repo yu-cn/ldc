@@ -7,7 +7,8 @@
 | **编排层** | `scripts/` 各阶段脚本负责的流程控制：sudo 交接、二进制安装、迁移机制 |
 | **dotfiles 层** | `dotfiles/` 仓库目录（模板=唯一声明源），bootstrap 渲染拷贝安装到 `~`（覆盖前备份 `*.bak`；ADR-0015）；例外 `~/.local/bin/ldc` 保持符号链接 |
 | **域** | 一份清单对应的一个覆盖面：base-linux / cli-tools / desktop（GNOME 桌面域）/ desktop-apps（桌面应用域） |
-| **通用核心** | 「每台 Ubuntu/Debian 开发机都需要」的内容，判据决定什么进仓库（ADR-0003） |
+| **通用核心** | 「每台 Ubuntu/Debian 开发机都需要」的内容，判据决定什么进仓库（ADR-0003）；同轴判例：VSCode 扩展/设置/键位属**账号态**，让位原生设置同步（ADR-0023） |
+| **一次性配置** | 默认姿态（ADR-0022）：bootstrap 跑一次即休眠，机器日常归用户、漂移合法；更新（拉新声明再跑）与回归（拉回当前声明）皆为显式手动行为，回归前先 `ldc plan` 预演 |
 | **可选包组** | 常用但非每台必需的工具清单（如 media-doc）：平铺 `configs/<名>.pkg`，指名安装、装没装由 dpkg 记账，不进断言面（ADR-0010） |
 | **干跑预演（plan）** | 只读投影「重跑会做什么」：OK=已就位 / PLAN=将变更 / SKIP=不适用 / INFO=需手工；与 verify（断言现状）互补，sudo 前先看一眼 |
 | **清单准入对账（audit）** | `ldc audit` 只读对账：①自装未声明（showmanual − 全部 .pkg 并集 − 特殊安装面 gh/docker，滤系统底座）= 准入候选；②已声明未装 = 收敛待办。恒 exit 0，核销语义在 verify |

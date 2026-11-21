@@ -1,6 +1,6 @@
 # LDC — 声明式 Linux 开发环境（Ubuntu/Debian）
 
-> clone 之后一条命令，任何一台 Ubuntu/Debian 机器收敛到声明状态：软件、语言运行时、CLI 工具、GNOME 桌面偏好、dotfiles——幂等、可重放、可迁移。
+> clone 之后一条命令，任何一台 Ubuntu/Debian 机器一次性配置到声明状态：软件、语言运行时、CLI 工具、GNOME 桌面偏好、dotfiles。跑完即休眠，机器日常归你、漂移合法；想跟进新声明（更新）或收回声明状态（回归）时显式再跑——幂等、可重放（[ADR-0022](docs/adr/0022-oneshot-posture-manual-update-reconverge.md)）。
 
 [![validate](https://github.com/yu-cn/ldc/actions/workflows/validate.yml/badge.svg)](https://github.com/yu-cn/ldc/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -72,7 +72,7 @@ starship 提示符 · lazygit · JetBrainsMono NF 字体（仅桌面栈机器）
 暗色主题 · 24h 时钟（含星期几）· 关热角 · 字体渲染 rgba/slight · Nautilus 显示隐藏文件 · 隐私去噪（关最近文件/应用使用记录）· 触摸板轻触 · Ubuntu Dock 点击最小化 · **中文输入源保底**（美式键盘 + ibus-rime 中州韵，词库走雾凇拼音）——无桌面会话自动 SKIP；发行版无对应组件的条目自动跳过
 
 **桌面应用域**（桌面栈机器启用，[ADR-0008](docs/adr/0008-desktop-apps-domain.md)）
-VSCode（packages.microsoft.com 源）+ [30 个扩展](configs/vscode-extensions.txt)（Python/Jupyter 全家、Remote-SSH/容器、中文语言包等）+ Chrome（dl.google.com 源）+ ibus-rime——双架构对称（两家厂商源均有 arm64/amd64）；扩展清单与 WDC 同名同格式，自装扩展不核销
+VSCode 本体（packages.microsoft.com 源；扩展/设置/键位走 VSCode 原生设置同步——账号态，登录即回，ADR-0023）+ Chrome（dl.google.com 源）+ ibus-rime——双架构对称（两家厂商源均有 arm64/amd64）
 
 **dotfiles**（[dotfiles/](dotfiles/)，渲染拷贝安装（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)），覆盖前备份 `*.bak`）
 bashrc（历史/别名/fzf/zoxide/starship + 工具布局事实 [env.sh](scripts/install-user-tools.sh) + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml · VSCode settings/keybindings（桌面应用域机器）
@@ -86,11 +86,11 @@ bashrc（历史/别名/fzf/zoxide/starship + 工具布局事实 [env.sh](scripts
 | 命令 | 用途 |
 |---|---|
 | `ldc` | 只读快照（裸命令默认，秒级）：远端差距 / dotfiles 漂移 / 身份 / root 阶段 / 最近 bootstrap；`--json` 单行机器可读出口 |
-| `ldc plan` | 干跑预演（只读零变更）：重跑收敛会做什么——sudo/重跑前先看一眼 |
-| `ldc sync [--full]` | 日常一键同步（fetch → pull --ff-only → bootstrap → verify 全量；已收敛且声明未变走快速路径仅 quick 断言（[ADR-0021](docs/adr/0021-convergence-ledger-fast-path.md)），`--full` 强制全量） |
+| `ldc plan` | 干跑预演（只读零变更）：重跑收敛会做什么——更新/回归前的推荐步骤（ADR-0022：漂移积累越久，单次回归覆盖面越大） |
+| `ldc sync [--full]` | 手动更新/回归入口（fetch → pull --ff-only → bootstrap → verify 全量；已收敛且声明未变走快速路径仅 quick 断言（[ADR-0021](docs/adr/0021-convergence-ledger-fast-path.md)），`--full` 强制全量；ADR-0022） |
 | `ldc verify [--full]` / `ldc audit` | 机器断言（默认 --quick）/ 清单准入对账（自装未声明 / 已声明未装，只读） |
 | `ldc triage` / `ldc log` / `ldc help` | dotfiles 落点漂移分流 / 最近日志尾部 / 帮助与版本（子命令后接 `-h` 出该命令详解；Tab 补全词表解析自脚本单一来源） |
-| `bash bootstrap.sh` | 完整收敛（日常改了配置后重跑） |
+| `bash bootstrap.sh` | 完整收敛（更新/回归的显式重跑入口） |
 | `bash validate.sh` | 只做无副作用校验（bash -n + shellcheck + 清单格式） |
 | `bash scripts/verify-machine.sh [--quick]` | 机器断言的脚本直跑形态 |
 

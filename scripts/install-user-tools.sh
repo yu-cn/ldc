@@ -165,35 +165,10 @@ else
     fi
 fi
 
-phase 'user 工具 · VSCode 扩展（ADR-0008）'
-if ! desktop_stack_present; then
-    step 'VSCode 扩展' SKIP '非桌面机器形态（headless/WSL/容器）'
-elif ! have code; then
-    step 'VSCode 扩展' INFO 'code 未装——root 阶段交接完成后重跑 bootstrap'
-else
-    # 幂等安装 fast-path：先读在装清单做差集（与 verify/plan 的 comm 口径同源），只对缺失件走
-    # marketplace——已装件零网络往返；机器自装扩展不在清单不核销（ADR-0003）
-    ext_missing=$(comm -23 <(pkg_list vscode-extensions.txt | sort) <(code --list-extensions 2>/dev/null | sort))
-    ext_total=$(pkg_list vscode-extensions.txt | grep -c . || true)
-    if [ -z "$ext_missing" ]; then
-        step 'VSCode 扩展' OK "$ext_total/$ext_total 就位"
-    else
-        ext_fail='' ext_installed=0
-        for ext in $ext_missing; do
-            if code --install-extension "$ext" >/dev/null 2>&1; then
-                ext_installed=$((ext_installed + 1))
-            else
-                ext_fail="$ext_fail $ext"
-            fi
-        done
-        if [ -z "$ext_fail" ]; then
-            step 'VSCode 扩展' OK "补装 $ext_installed 件（$ext_total/$ext_total 就位）"
-        else
-            step 'VSCode 扩展' FAIL "失败：$ext_fail"
-            fail=$((fail + 1))
-        fi
-    fi
-fi
+phase 'user 工具 · VSCode 扩展'
+# 全让位原生设置同步（ADR-0023，镜像 WDC v1-program 工单03 主人定夺 2026-11-21）：扩展/设置/键位
+# 属账号态（跟人走），归 VSCode 自己的同步机制——清单与安装动作退役；code 本体随 desktop-apps.pkg 照装
+step 'VSCode 扩展' SKIP '让位原生设置同步（ADR-0023）——登录 VSCode 后自动恢复'
 
 phase 'user 工具 · 机器事实文件 env.sh（ADR-0015）'
 # bashrc 模板只 source 这一个文件：fzf 键位示例路径在安装期探测落盘——mise/uv 布局固定，
