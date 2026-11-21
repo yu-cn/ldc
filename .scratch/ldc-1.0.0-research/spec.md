@@ -1,30 +1,61 @@
-# spec · LDC 1.0.0 立项研究（WDC 1.0.0 发布后启动）
+# spec · LDC 1.0.0 定版（grilling 三轮收口，2026-11-22）
+
+Status: grilling 收口 → 执行（工单 02/03/04）
+Type: program
 
 ## 定夺
 
-主人 2026-11-22：「wdc 做完后，让 ldc 研究下 1.0.0 应该做什么」——WDC 1.0.0 收官后，LDC 启动同号里程碑的立项研究（grilling/调研会话，非直接开工）。
+主人 2026-11-22 三轮 grilling 逐轮批准（R1 六问 / R2 四问 + Linux 原生 steer / R3 三问）。1.0.0 总口径：**机制面零新增、已齐面宣告定版、叙事面 Linux 原生做足**——不照搬 WDC 的 Windows 工作（主人 steer 明示）；承诺面同构、注脚按 Linux 事实。
 
-## 已备事实（WDC 1.0.0 收官批沉淀，研究起点）
+里程碑加持项对齐 WDC 六件：README 翻新 ✓ / SemVer 宣告 ✓ / demo 重录（三段 `ldc`/`ldc plan`/`ldc exit` 预演，verify 出镜让位）/ 坑档空过（11 月下半无新实录，主人无点名）/ 钉版回退预案（notes 已知事项 `LDC_TAG=v0.14.0`）/ 归档照收。
 
-- **承诺面对齐现状**：退出面已齐（ADR-0024 `ldc exit` 同构落地，2026-11-22）；一次性姿态已对齐（ADR-0022 镜像）。LDC 距 1.0.0 的差距比 WDC 收官前小。
-- **WDC 1.0.0 门槛清单可作参照**（`.scratch/v1-program/issues/04-release-1.0.0-checklist.md`）：CI 全环（已加 exit 腿）/双机终验/文档一致/CHANGELOG 收节/SemVer 宣告/效果优先 notes。
-- **候选研究题**（来自 WDC 侧对话沉淀，供 grilling 展开）：
-  1. LDC 有没有 WDC 已做的对应物缺口：pre-install 快照等价物（apt 侧无注册表，等效物=？dpkg 状态导出？可能不必要）；undo 表等价物（apt 面可机械推导？）；clean-legacy 等价（LDC 历史残留清单：vp 迁移已随航、rc 残留？）
-  2. 双仓对照研究（WDC docs/research/v1-comparison.md 同款：上游 wsl-comfort 对照已封卷，LDC 的对照对象=？Debian/Ubuntu 官方 dev setups / dotfiles 管理器生态）
-  3. 1.0.0 承诺面定义 + 里程碑加持项（demo 重录、README 翻新、升级指引）
-  4. 双仓版本节奏：LDC 1.0.0 与 WDC 1.0.0 是否同号同日（联动面=姿态对齐批已发各自仓；§5 判据）
+## 承诺面（README / notes / CHANGELOG 收节同用）
 
-## 边界
+「**一次性配置 + 显式更新/回归 + 完整退出（`ldc exit` / undo 表 / 升级指引）+ 漂移合法不纠察**」——WDC 1.0.0 承诺面的同构四件套；LDC 注脚：还原基准 = dpkg 账本 + undo 表（无注册表故无 pre-install 快照，见下）。
 
-- 本票只立项研究（grilling 一次一问），研究产出 spec + 工单群后再开工
-- LDC 侧规矩：决策归环境主人；工具镜头/桌面域边界等既有定夺不翻案
+## 三件对应物缺口的定性（WDC 有、LDC 定为不做）
 
-## 移交快照（2026-11-22 主人定夺：LDC 后续工作移交 ZCode 对应 LDC 项目会话推进）
+| WDC 件 | LDC 定性 | 落档 |
+|---|---|---|
+| pre-install 快照 | apt 面 undo 由 dpkg 账本机械可推导、dotfiles 落点 `.bak` 即首次渲染前快照、daemon.json 只写声明键——「不可推导原值」面不存在 | `docs/undo-table.md` 头部定性句 |
+| clean-legacy 命令 | 自家残留面≈空：vp 随航（ADR-0016）/ wsl-comfort 一次性清档（ADR-0018）/ 链接残形渲染期替换（ADR-0015）/ `.bak` 轮转自管理 / 状态目录 exit 删 | `docs/cli-parity.md` ldc 列「—」脚注（双仓同源，改后 WDC 侧拷贝） |
+| CLI 注入用户选择 | 无痛点信号；1.0.0 前夜加交互面 = CI + 契约 + 模板三处成本 | 本 spec 遗留观察 |
 
-**新会话开场路径**：读 `AGENTS.md` → 本 spec → `CHANGELOG.md` Unreleased（1.0.0 记账已积累）→ `git log --oneline -8`。
+## 对照面在档（不单开对照研究）
 
-**已齐面（勿重做）**：一次性姿态（ADR-0022）/ VSCode 全让位（ADR-0023 含修订：扩展+设置+键位）/ `ldc exit`（ADR-0024，fresh-container 四架构全绿含装了→退→退了→装全环腿，run 44930860595）/ undo 表 + 升级指引（docs/undo-table.md、docs/upgrade-v1.md）/ 契约面与 WDC 同步（cli-parity 双仓命令面含 exit ✓）。
+LDC 无血统上游，三段对照各有在档：WDC 同构面（cli-parity + 双仓纪律持续对齐）；wsl-comfort（ADR-0014 参考资源定性 + ADR-0018 清残吸收完毕）；业界（ADR-0015 chezmoi/stow/Ansible 对照在档）。
 
-**待推进**：① grilling（候选题四道在上方，需主人）→ 产出 1.0.0 spec+工单群；② demo 评估（命令集未大变，caption 已新——大概率仅微调或跳过）；③ **发布汇合点两选一（主人定）**：与 WDC 1.0.0 同号同日（exit 批契约联动成立，tag/release 同会话——需与 WDC 会话协同）或随后独立发；④ CHANGELOG 收节 + SemVer 宣告 + 效果优先 notes（参照 WDC docs/changelog-standard.md 双仓同源 + `.scratch` 工单04 同款门槛制）。
+## Linux 原生面定夺（2026-11-22 steer）
 
-**双仓纪律提醒**：cli-parity / dev-standard / changelog-standard 三文件双仓同源（主作者位 LDC）；改命令面先改本仓契约再由 WDC 侧拷贝；WDC 侧发布动作不依赖 LDC（各自仓各自发，仅同号同日选项需协同）。
+机制候选逐一过判据（ADR-0003 通用核心 / 自留地 / 只装不删 / 不替系统做主），全部不进 1.0.0 机制面：
+
+- **sysctl 调优（inotify 等）：后移待实录**——本机 watches=524288（VSCode 推荐值即此）、instances=128，无撞限实录；真撞限再按 sysctl.d 声明文件 + 受保护合并同款配方开票
+- snap/flatpak 政策、unattended-upgrades、fstrim/zram/swap：不做——系统策略不接管
+- apt autoremove/autoclean：不做（红线「只装不删」+ 红线 11，无讨论空间）
+- GNOME opinion：desktop.gsettings 14 条定版，点名口随 1.0.0 关闭（后续加随时开票——声明面是平的，加一行就是）
+
+叙事骨架五件（README 翻新 / release notes 展开面，全部为已实现面的重新表达，零机制变更）：① 双发行版 × 双架构四腿 CI 实证 ② apt + dpkg 账本——安装即记账、还原可机械推导 ③ gsettings 桌面域按需启用，含 ibus-rime 中文输入整链 ④ daemon.json 受保护合并、绝不自动重启 ⑤ 可选包组自选语义。
+
+## 遗留观察（不阻塞；前两条为 WDC checklist 遗留观察的答复，经主人回告 WDC 侧）
+
+- **Chrome 不除名**：desktop-apps.pkg 是可选包组（ADR-0010 指名安装、不进断言）——WDC「通用消费软件出局」判例的压力被自选语义天然消解
+- **exit T3 已消解**：WDC 遗留观察②写于 `ldc exit` 落地前；`ldc exit` 即那个「未备卸载器」，WDC T3a 指路即完全体
+- CLI 注入用户选择：见定性表
+- sysctl 调优：后移待实录（见上）
+
+## 汇合点（两案备态，发布票开跑前主人定夺）
+
+WDC checklist 门槛⑧已写「双仓 v1.0.0 同号同日」、执行序③=「LDC CHANGELOG 收节（WSL 内）」——WDC 侧已按 A 案铺路。
+
+- **A 案 同号同日**：与 WDC 会话协同，LDC 收节 commit 由本会话做，随后双仓 tag → 双仓 release 同会话收口
+- **B 案 随后独立发**：本仓自行 tag/release；WDC 侧门槛⑧需其会话改
+
+## 工单群
+
+- **02 内容批**：README 里程碑翻新（承诺面句 + 叙事骨架五件 + 四件事口径核对）/ SemVer 宣告 / undo-table 定性句 / cli-parity 脚注（含 WDC 拷贝步）
+- **03 demo 重录**：三段 `ldc` / `ldc plan` / `ldc exit` 预演
+- **04 发布主票**：门槛制（终验 ①② 必做 ③ 可选 + 收节 + notes）+ 执行序两案备态
+
+## 沿革
+
+立项开票 aa88b80 → 并行技术件 e8fb90f（undo 表 / 升级指引 / ADR-0023 修订，工单01 已归档）→ 移交快照 f441aa8（已齐面清单与双仓纪律在彼处存档）→ 本定版。终验实机口径：单机（本机 WSL Ubuntu）；如报第二台实机补双机半场。

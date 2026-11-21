@@ -14,7 +14,9 @@
 
 **支持的机器形态**：Ubuntu 24.04+ / Debian 13+（双发行版 × 双架构四腿均入 CI 冒烟矩阵实证；Debian 12 缺 eza/git-delta 不在面内）· **amd64 / arm64 双架构一等公民**（[ADR-0006](docs/adr/0006-dual-arch-first-class.md)），其它架构在 bootstrap 预检即失败。WSL Ubuntu 亦属 amd64 目标可直接跑；WDC 管理的发行版按 ADR-0007 走委托路径（一个发行版只归一个管理器）；无 systemd 的 WSL 建议 `LDC_SKIP_DOCKER=1`。
 
-**安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· dotfiles 落点为模板渲染拷贝——仓库缺席不影响已收敛机器；纯模板更新直接重渲染（渲染账本判定），机器侧改动覆盖前必备份 `*.bak`（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）· Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
+**安全与边界**：幂等重跑（已就位即跳过）· 只装不删、清单外不碰——无卸载清单，机器私有内容不受影响（[ADR-0003](docs/adr/0003-universal-core-and-machine-reserve.md)）· apt + dpkg 账本——安装即记账、卸载面可机械核销（无注册表故无需 pre-install 快照，还原对照见 [undo 表](docs/undo-table.md)）· dotfiles 落点为模板渲染拷贝——仓库缺席不影响已收敛机器；纯模板更新直接重渲染（渲染账本判定），机器侧改动覆盖前必备份 `*.bak`（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)）· Docker daemon 只做受保护合并，绝不自动重启（[ADR-0009](docs/adr/0009-docker-daemon-protected-merge.md)）。动手前想先看？`ldc plan` 干跑预演「重跑会做什么」，只读零变更。
+
+**1.0.0 承诺面**：一次性配置 · 显式更新/回归 · 完整退出（[`ldc exit`](docs/adr/0024-ldc-exit.md) 声明面全退、数据面不动；[undo 表](docs/undo-table.md) 手工正典）· 漂移不纠察。存量机升级一条 `ldc sync`，行为差异见[升级指引](docs/upgrade-v1.md)。
 
 ## 快速开始（新机器）
 
@@ -49,7 +51,7 @@ cd <repo> && sudo bash scripts/install-packages.sh
 1. **root 阶段交接**——sudo 需密码时按末尾打印的命令手动执行（agent/CI 无法替你输密码）
 2. **填写身份**——bootstrap 生成 `~/.gitidentity` 占位后，填上**本机**的 git name/email（占位未填则 git 拒绝提交，这是防错护栏），然后做首次 commit：`git add -A && git commit -m "Initial LDC scaffold"`
 3. **桌面域**——有 GNOME 的机器在 SSH 上下文会 SKIP，登录桌面会话后重跑 `bash bootstrap.sh`（或 `ldc sync`）应用 gsettings 与字体
-4. **关闭 VSCode 设置同步**（桌面应用域机器）——首次启动 VSCode 若已登录账号，关闭「设置同步」：它是账号级开关、配置文件管不到；不关的话云端会与仓库 dotfiles 打架（仓库是唯一主人）
+4. **登录 VSCode 同步**（桌面应用域机器）——扩展/设置/键位属账号态，仓库只装本体（[ADR-0023](docs/adr/0023-vscode-handoff-native-sync.md)）：首次启动 VSCode 登录账号并开启「设置同步」，云端配置自动恢复
 
 </details>
 
@@ -75,7 +77,7 @@ starship 提示符 · lazygit · JetBrainsMono NF 字体（仅桌面栈机器）
 VSCode 本体（packages.microsoft.com 源；扩展/设置/键位走 VSCode 原生设置同步——账号态，登录即回，ADR-0023）+ Chrome（dl.google.com 源）+ ibus-rime——双架构对称（两家厂商源均有 arm64/amd64）
 
 **dotfiles**（[dotfiles/](dotfiles/)，渲染拷贝安装（[ADR-0015](docs/adr/0015-copy-render-not-symlink.md)），覆盖前备份 `*.bak`）
-bashrc（历史/别名/fzf/zoxide/starship + 工具布局事实 [env.sh](scripts/install-user-tools.sh) + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml · VSCode settings/keybindings（桌面应用域机器）
+bashrc（历史/别名/fzf/zoxide/starship + 工具布局事实 [env.sh](scripts/install-user-tools.sh) + 末尾 `.bashrc.local` 机器自留地）· gitconfig（delta / rerere / zdiff3；身份经 `~/.gitidentity` 每机本地提供）· starship.toml
 
 </details>
 

@@ -1,6 +1,8 @@
 # undo 表——退出与手工撤销对照（LDC 版）
 
 > `ldc exit`（[ADR-0024](../adr/0024-ldc-exit.md)）的手工对照正典：声明面各域的撤销动作逐项列出，不跑 exit 也能手工拆解。对齐 WDC docs/undo-table.md 同款做法。
+>
+> 与 WDC 侧的结构差异（2026-11-22 1.0.0 立项定性）：Windows 注册表值不可机械推导原值，故 WDC 另有 pre-install 快照作还原基准；LDC 三个写入面全部可推导或已留底——apt 面 undo 由 dpkg 账本机械核销（本表）、dotfiles 落点 `.bak` 即首次渲染前快照、daemon.json 受保护合并只写声明键——「不可推导原值」面不存在，无需快照等价物。
 
 ## apt 核心域（base-linux + cli-tools，configs/*.pkg 单一来源）
 
