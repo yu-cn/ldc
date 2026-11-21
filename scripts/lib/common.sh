@@ -257,14 +257,14 @@ bashrc_local_extract() {
 dotfiles_map() {
     # 落点映射单一来源：显示名|仓库模板相对路径|机器落点（$HOME 起）|生效门|模式
     # 门=always 恒适用 / desktop 仅桌面栈机器（ADR-0008）；模式=render 渲染拷贝 / link 符号链接（仅 CLI 入口）
+    # VSCode settings/keybindings 不在此列（ADR-0023 修订 2026-11-22：全让位原生设置同步——
+    # 扩展先行、设置/键位补齐，账号态归账号；对齐 WDC 同日判例）
     # 新增 dotfile 只改这里，安装面与断言面自动同步（对齐 WDC dotfiles-map.ps1）
     cat <<'MAP'
 ~/.bashrc|dotfiles/linux/bashrc|.bashrc|always|render
 ~/.gitconfig|dotfiles/linux/gitconfig|.gitconfig|always|render
 ~/.config/starship.toml|dotfiles/shared/starship.toml|.config/starship.toml|always|render
 ~/.local/bin/ldc|ldc|.local/bin/ldc|always|link
-VSCode settings.json|dotfiles/linux/vscode-settings.json|.config/Code/User/settings.json|desktop|render
-VSCode keybindings.json|dotfiles/linux/vscode-keybindings.json|.config/Code/User/keybindings.json|desktop|render
 MAP
 }
 

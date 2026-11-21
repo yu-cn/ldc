@@ -92,8 +92,7 @@ for v in mise-version uv-version starship-version lazygit-version nerd-fonts-ver
         fail=$((fail + 1))
     fi
 done
-for f in dotfiles/linux/bashrc dotfiles/linux/gitconfig dotfiles/shared/starship.toml \
-         dotfiles/linux/vscode-settings.json dotfiles/linux/vscode-keybindings.json; do
+for f in dotfiles/linux/bashrc dotfiles/linux/gitconfig dotfiles/shared/starship.toml; do
     if [ -f "$ROOT/$f" ]; then
         step "$f" OK
     else
