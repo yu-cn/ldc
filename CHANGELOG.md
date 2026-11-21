@@ -7,7 +7,7 @@
 - 格式遵循 [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/) 的中文化改造版（[docs/changelog-standard.md](docs/changelog-standard.md)，双仓同源、主作者位 LDC）——显著变更人为记录、六类型（Added/Changed/Deprecated/Removed/Fixed/Security）分类归档、每版本 compare 链接可跳转、倒序排列；破坏性变更以 `Breaking:` 标记写在对应类型节内（不单列节）
 - 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR；**1.0.0 起 SemVer 完整生效**——破坏性变更走 MAJOR，承诺面即「一次性配置 + 显式更新/回归 + 完整退出」）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
 
-## [Unreleased]
+## [1.0.0] - 2026-11-22
 
 ### Added
 - `ldc exit [--yes] [--keep-tools]`（[ADR-0024](docs/adr/0024-ldc-exit.md)，对齐 WDC 同日 ADR-0010 同构语义——双仓承诺面对齐）：T2 完整退出（默认）= apt 核心域卸载（**共享资源豁免**：libatomic1/fontconfig/curl/wget——公共库与通用工具卸之伤及无关软件）+ gh apt 源清理 + uv/uvx/mise/starship 二进制卸载（**数据面不动**：runtime/venv/cache）+ dotfiles 落点处置（`.bak` 还原原文件/无则删，ADR-0015 同款）+ 状态删除（渲染/收敛账本、`~/.ldc` 指针、ldc 链接）；`--keep-tools`=T1 只删状态；默认预演（非 tty 自动降级，`--yes` 执行）；sudo 需密码机器走交接命令哲学。**不代跑**：Docker 引擎（指引）、可选包组（自管）、NF 字体（共享资源）。fresh-container 加「装了→退→退了→装」全环腿
@@ -15,6 +15,9 @@
 ### Changed
 - LDC 定位改「一次性配置 + 显式更新/回归」（[ADR-0022](docs/adr/0022-oneshot-posture-manual-update-reconverge.md)，镜像 WDC 同日 [ADR-0009](https://github.com/yu-cn/wdc/blob/main/docs/adr/0009-oneshot-manual-update-reconverge.md)，主人定夺双仓保持+姿态对齐）：bootstrap 跑一次即休眠，机器日常归用户、漂移合法；`ldc sync` 从「日常一键同步」降格为手动更新/回归入口，快照/verify/triage/audit 定性按需诊断，`ldc plan` 升格为回归前推荐预演。纯姿态与叙事变更，零行为变更；多机「随时全绿」承诺收缩为手动时点对齐
 - VSCode 扩展全让位原生设置同步（[ADR-0023](docs/adr/0023-vscode-handoff-native-sync.md)，镜像 WDC 同日判例）：`configs/vscode-extensions.txt` 清单除名，install-user-tools 安装段 / plan-machine 投影 / verify-machine 断言退役为 SKIP 留痕；code 本体照装（桌面机器形态），扩展/设置/键位登录 VSCode 同步自动恢复——账号是事实源，仓库不再替账号做主
+
+### Fixed
+- validate 清单检查随 ADR-0023 除名收口：`vscode-extensions.txt` 已删而检查硬编码残留，文件缺席时 grep 静默空转报假 OK（80357bd——收节批提交的 validate 输出 stderr 泄漏线索抓出）
 
 ## [0.14.0] - 2026-11-14
 
@@ -152,7 +155,8 @@
 ### Added
 - 首个发布锚点：bootstrap 七阶段收敛（预检 → 校验 → root 交接 → user 工具 → 桌面 → dotfiles → 汇总）、verify 机器断言、`ldc` CLI、dotfiles 机器自留地（ADR-0003）、双架构一等公民（ADR-0006）
 
-[Unreleased]: https://github.com/yu-cn/ldc/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/yu-cn/ldc/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/yu-cn/ldc/compare/v0.14.0...v1.0.0
 [0.14.0]: https://github.com/yu-cn/ldc/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/yu-cn/ldc/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/yu-cn/ldc/compare/v0.11.0...v0.12.0
