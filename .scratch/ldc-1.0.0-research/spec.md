@@ -18,3 +18,13 @@
 
 - 本票只立项研究（grilling 一次一问），研究产出 spec + 工单群后再开工
 - LDC 侧规矩：决策归环境主人；工具镜头/桌面域边界等既有定夺不翻案
+
+## 移交快照（2026-11-22 主人定夺：LDC 后续工作移交 ZCode 对应 LDC 项目会话推进）
+
+**新会话开场路径**：读 `AGENTS.md` → 本 spec → `CHANGELOG.md` Unreleased（1.0.0 记账已积累）→ `git log --oneline -8`。
+
+**已齐面（勿重做）**：一次性姿态（ADR-0022）/ VSCode 全让位（ADR-0023 含修订：扩展+设置+键位）/ `ldc exit`（ADR-0024，fresh-container 四架构全绿含装了→退→退了→装全环腿，run 44930860595）/ undo 表 + 升级指引（docs/undo-table.md、docs/upgrade-v1.md）/ 契约面与 WDC 同步（cli-parity 双仓命令面含 exit ✓）。
+
+**待推进**：① grilling（候选题四道在上方，需主人）→ 产出 1.0.0 spec+工单群；② demo 评估（命令集未大变，caption 已新——大概率仅微调或跳过）；③ **发布汇合点两选一（主人定）**：与 WDC 1.0.0 同号同日（exit 批契约联动成立，tag/release 同会话——需与 WDC 会话协同）或随后独立发；④ CHANGELOG 收节 + SemVer 宣告 + 效果优先 notes（参照 WDC docs/changelog-standard.md 双仓同源 + `.scratch` 工单04 同款门槛制）。
+
+**双仓纪律提醒**：cli-parity / dev-standard / changelog-standard 三文件双仓同源（主作者位 LDC）；改命令面先改本仓契约再由 WDC 侧拷贝；WDC 侧发布动作不依赖 LDC（各自仓各自发，仅同号同日选项需协同）。

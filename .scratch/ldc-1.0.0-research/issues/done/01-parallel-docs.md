@@ -15,6 +15,10 @@ Type: task
 
 ## 验收
 
-- [ ] 两文档落地，与 ADR-0022/0023/0024 互链一致
-- [ ] README 无陈旧引用
-- [ ] validate 绿
+- [x] 两文档落地，与 ADR-0022/0023/0024 互链一致
+- [x] README 无陈旧引用（核对抓出 VSCode 让位「README 先行、实现滞后」不一致——已补齐实现：dotfiles_map 7→5+模板除名+ADR-0023 修订）
+- [x] validate 绿
+
+## Comments
+
+- 2026-11-22 开票即收（e8fb90f）。**移交注记**：主人定夺 LDC 后续工作移交 ZCode 对应 LDC 项目会话推进（WDC 会话不再驱动 LDC 实施面）；本票随批收口，frontier 由 `.scratch/ldc-1.0.0-research/spec.md` 的移交快照接管。
