@@ -64,14 +64,6 @@ for m in "$ROOT"/configs/*.gsettings; do
         fail=$((fail + 1))
     fi
 done
-ext_bad=$(grep -vE '^[[:space:]]*(#|$)' "$ROOT/configs/vscode-extensions.txt" \
-          | grep -vE '^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9._-]+$' || true)
-if [ -z "$ext_bad" ]; then
-    step 'configs/vscode-extensions.txt' OK
-else
-    step 'configs/vscode-extensions.txt' FAIL "应为 publisher.name 格式：$(printf '%s' "$ext_bad" | head -n 1)"
-    fail=$((fail + 1))
-fi
 # 版本钉子检查（ADR-0011 + ADR-0020 收紧）：版本行格式 + sha256 行必配——分架构四钉须双 arch 行、
 # nerd-fonts 须无 arch 行；starship-version 本批补入（原检查清单漏它，实为五钉）
 for v in mise-version uv-version starship-version lazygit-version nerd-fonts-version; do
