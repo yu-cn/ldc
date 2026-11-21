@@ -22,7 +22,7 @@ SELF="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 . "$SELF/scripts/lib/common.sh"
 
-LDC_COMMANDS='status sync verify plan audit triage log help version'
+LDC_COMMANDS='status sync verify plan audit triage exit log help version'
 cmd="${1:-status}"
 [ $# -gt 0 ] && shift
 
@@ -62,6 +62,11 @@ print_topic_help() {
   两个方向：①自装未声明（apt-mark showmanual 对全部 .pkg 并集的差集，滤掉系统底座）——
   清单准入候选：每台机器都要的吸收进 .pkg，仅本机要的属机器自留；②已声明未装——收敛待办
   （root 交接 / install-packages.sh <组>）。这是对账报告不是断言，核销语义在 verify。' ;;
+            exit) echo 'ldc exit [--yes] [--keep-tools] — 退出 LDC（ADR-0024，对齐 wdc exit 同构）
+T2 完整退出（默认）：apt 核心域卸载（共享资源豁免：libatomic1/fontconfig/curl/wget）+ gh 源清理
++ uv/mise/starship 二进制卸载（数据面 runtime/venv/cache 不动）+ dotfiles 落点（.bak 还原/无则删）
++ 状态删除（账本/指针/ldc 链接）。--keep-tools=T1 只删状态。默认预演（非 tty 自动）——执行加 --yes。
+不代跑：Docker 引擎（指引）、可选包组（自管）、NF 字体（共享资源）。幂等失败重跑。' ;;
             log) echo 'ldc log [N] — 最近一次 bootstrap 日志尾部（默认 40 行）' ;;
             *) cat <<'EOF'
 ldc — LDC 开发环境一键工具（裸命令只读快照；仓库在 ~/.ldc 指向的路径）
@@ -369,6 +374,12 @@ case $cmd in
 
     audit)
         bash "$repo/scripts/audit-machine.sh"
+        exit $?
+        ;;
+
+    exit)
+        # ADR-0024：声明面全退数据面不动（--yes 执行/--keep-tools 只退状态；非交互无 --yes 预演）
+        bash "$repo/scripts/exit-ldc.sh" "$@"
         exit $?
         ;;
 

@@ -8,6 +8,7 @@
 | **dotfiles 层** | `dotfiles/` 仓库目录（模板=唯一声明源），bootstrap 渲染拷贝安装到 `~`（覆盖前备份 `*.bak`；ADR-0015）；例外 `~/.local/bin/ldc` 保持符号链接 |
 | **域** | 一份清单对应的一个覆盖面：base-linux / cli-tools / desktop（GNOME 桌面域）/ desktop-apps（桌面应用域） |
 | **通用核心** | 「每台 Ubuntu/Debian 开发机都需要」的内容，判据决定什么进仓库（ADR-0003）；同轴判例：VSCode 扩展/设置/键位属**账号态**，让位原生设置同步（ADR-0023） |
+| **退出（exit）** | `ldc exit` 的完整退出语义（ADR-0024，对齐 wdc exit）：声明面全退（apt 核心域/二进制/dotfiles 落点）、数据面不动（runtime/venv/cache、Docker 卷、可选包组、共享资源豁免）；默认预演 `--yes` 执行 |
 | **一次性配置** | 默认姿态（ADR-0022）：bootstrap 跑一次即休眠，机器日常归用户、漂移合法；更新（拉新声明再跑）与回归（拉回当前声明）皆为显式手动行为，回归前先 `ldc plan` 预演 |
 | **可选包组** | 常用但非每台必需的工具清单（如 media-doc）：平铺 `configs/<名>.pkg`，指名安装、装没装由 dpkg 记账，不进断言面（ADR-0010） |
 | **干跑预演（plan）** | 只读投影「重跑会做什么」：OK=已就位 / PLAN=将变更 / SKIP=不适用 / INFO=需手工；与 verify（断言现状）互补，sudo 前先看一眼 |
