@@ -21,7 +21,7 @@ grilling R1 Q5c + R2 Q3：重录，三段对齐 WDC 终版叙事（快照 / plan
 ## Comments
 
 - 2026-11-22 开票（grilling 收口批）；同日实施收口（待 commit）。上一版 9124d93（2026-11-01，vp→mise 换轨后三段 `ldc`/`ldc plan`/`ldc verify --quick`）。
-- 生成配方沿现版：真实命令输出脱敏生成（prompt 固定 `demo@ldc:~$`、`/home/ubuntu`→`/home/demo`、仓库行归一全绿口径、组名脱敏）；逐字打字 50ms/字符，agg v1.9.0 转 GIF。
+- 生成配方沿现版：真实命令输出脱敏生成（prompt 固定 `demo@ldc:~$`、真实 HOME 前缀→`/home/demo`（仓库不落本地真实路径）、仓库行归一全绿口径、组名脱敏）；逐字打字 50ms/字符，agg v1.9.0 转 GIF。
 - 节奏修订一版：首版 exit 预演输出挤在末 0.3s 一闪而过（帧检抓出）——exit 段行流出降速 0.05s/行 + 片尾驻留 1.6s（GIF 循环前读屏时间）；终版 96 帧 / 7.21s / 1.4MB。
 - 帧级自检（ffmpeg 抽帧 + 视觉判读）：status 段与 exit 驻留帧两检全过——中文清晰、长行自然换行无截断、提示符/排版正常；状态标签单色与现版观感一致（管线捕获无 ANSI，现版 cast 同款）。
 - 录制环境实录：`ldc exit` 走非 tty 自动降级预演（ADR-0024 口径），exit 0 零变更；录后 verify --quick 全绿实证。
