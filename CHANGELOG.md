@@ -7,6 +7,12 @@
 - 格式遵循 [Keep a Changelog 2.0.0](https://keepachangelog.com/en/2.0.0/) 的中文化改造版（[docs/changelog-standard.md](docs/changelog-standard.md)，双仓同源、主作者位 LDC）——显著变更人为记录、六类型（Added/Changed/Deprecated/Removed/Fixed/Security）分类归档、每版本 compare 链接可跳转、倒序排列；破坏性变更以 `Breaking:` 标记写在对应类型节内（不单列节）
 - 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)（v0.x 阶段破坏性变更走 MINOR；**1.0.0 起 SemVer 完整生效**——破坏性变更走 MAJOR，承诺面即「一次性配置 + 显式更新/回归 + 完整退出」）；提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/v1.0.0/)——feat / fix 驱动版本号。发布动作与验证锚点见各 [release](https://github.com/yu-cn/ldc/releases)。
 
+## [Unreleased]
+
+### Fixed
+
+- validate.sh 执行位补回：e8fb90f（1.0.0 收节批）提交时丢 +x（100755→100644），CI fresh checkout 直接 Permission denied（exit 126）自该批起连红（磁盘副本亦无 +x，本地调用未走执行位故未察觉）
+
 ## [1.0.0] - 2026-11-22
 
 ### Added
