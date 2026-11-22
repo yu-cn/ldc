@@ -6,16 +6,16 @@
 
 **Status:** done
 
-- [ ] ① install-user-tools.sh：mise 换轨 + vp 一次性卸载豁免 + node@lts 默认
-- [ ] ② uv 双钉升级（release + sha256）
-- [ ] ③ vp-version 删除；docker 面核实已在位（不设 docker.pkg）
-- [ ] ④ env.sh 生成逻辑换 mise
-- [ ] ⑤ bashrc WSL 垫片门控段
-- [ ] ⑥ verify / plan / common / validate 换面
-- [ ] ⑦ VSCode 清单去 vite-plus 扩展包
-- [ ] ⑧ AGENTS / GLOSSARY / dev-standard 三处成文
+- [x] ① install-user-tools.sh：mise 换轨 + vp 一次性卸载豁免 + node@lts 默认
+- [x] ② uv 双钉升级（release + sha256）
+- [x] ③ vp-version 删除；docker 面核实已在位（不设 docker.pkg）
+- [x] ④ env.sh 生成逻辑换 mise
+- [x] ⑤ bashrc WSL 垫片门控段
+- [x] ⑥ verify / plan / common / validate 换面
+- [x] ⑦ VSCode 清单去 vite-plus 扩展包
+- [x] ⑧ AGENTS / GLOSSARY / dev-standard 三处成文
 - [x] ⑨ README / demo 重录
-- [ ] ⑩ 本机 WSL 真机验收（bootstrap 收敛、vp 消失、mise+node@lts+uv 就位）+ CI 双架构绿 + v0.9.0 同日发版（联动 WDC 工单39）
+- [x] ⑩ 本机 WSL 真机验收（bootstrap 收敛、vp 消失、mise+node@lts+uv 就位）+ CI 双架构绿 + v0.9.0 同日发版（联动 WDC 工单39）
 
 ## Comments
 

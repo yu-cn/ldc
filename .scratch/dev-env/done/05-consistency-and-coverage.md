@@ -17,10 +17,10 @@ v0.1.0 后的优化盘点（P1/P2 打包）：三项一致性欠账 + 三项有�
 
 ## 验收
 
-- [ ] validate 全绿（含四组自测）
-- [ ] 本机 bootstrap：starship = 钉子 SKIP、字体首次补戳记重下、漂移提示静默（无漂移时零输出）
-- [ ] 漂移提示正例实测：临时改 dotfiles 模板 → 新开 shell 出黄字 → 还原后消失
-- [ ] CI：validate 绿 + handoff 腿 exit 2 断言过 + 双架构冒烟不受影响
+- [x] validate 全绿（含四组自测）
+- [x] 本机 bootstrap：starship = 钉子 SKIP、字体首次补戳记重下、漂移提示静默（无漂移时零输出）
+- [x] 漂移提示正例实测：临时改 dotfiles 模板 → 新开 shell 出黄字 → 还原后消失
+- [x] CI：validate 绿 + handoff 腿 exit 2 断言过 + 双架构冒烟不受影响
 
 ## 实录（2026-10-24）
 
